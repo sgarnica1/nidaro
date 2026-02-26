@@ -1,0 +1,43 @@
+﻿---
+alwaysApply: true
+---
+# Add/Create Button Pattern
+
+For main pages (gastos, presupuestos, plantillas, categorÃ­as, etc.), follow this responsive pattern for the primary creation action:
+
+## Mobile
+Use a floating action button (FAB) fixed at the bottom-right:
+
+```tsx
+<Button
+  size="icon"
+  className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg md:hidden z-40"
+>
+  <Plus className="h-6 w-6" />
+</Button>
+```
+
+See [src/app/(app)/gastos/fab.tsx](mdc:src/app/(app)/gastos/fab.tsx) for a real example.
+
+## Desktop
+Place a standard button to the right of the page title in a flex row with justify-between:
+
+```tsx
+<div className="flex items-center justify-between">
+  <div>
+    <h1 className="text-2xl font-semibold">Page Title</h1>
+    <p className="text-sm text-muted-foreground">Subtitle</p>
+  </div>
+  <Button className="hidden md:flex">
+    <Plus className="h-4 w-4 mr-2" />
+    Nueva plantilla
+  </Button>
+</div>
+```
+
+See [src/app/(app)/plantillas/page.tsx](mdc:src/app/(app)/plantillas/page.tsx) as a reference.
+
+## Combined
+- FAB uses `md:hidden` to hide on desktop
+- Header button uses `hidden md:flex` to show only on desktop
+- Both trigger the same sheet/form/action

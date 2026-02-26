@@ -1,0 +1,206 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum DeductionType {
+  PERCENTAGE
+  FIXED
+}
+
+enum FamilyRole {
+  OWNER
+  EDITOR
+}
+
+model User {
+  id        String   @id @default(cuid())
+  clerkId   String   @unique
+  name      String
+  email     String   @unique
+  createdAt DateTime @default(now())
+
+  incomeSources      IncomeSource[]
+  expenseCategories  ExpenseCategory[]
+  budgets            Budget[]
+  budgetTemplates    BudgetTemplate[]
+  familyMemberships  FamilyMember[]
+  ownedFamilyGroups  FamilyGroup[]     @relation("FamilyOwner")
+  categoryPercentages UserCategoryPercentage[]
+}
+
+model FamilyGroup {
+  id      String @id @default(cuid())
+  name    String
+  ownerId String
+
+  owner   User           @relation("FamilyOwner", fields: [ownerId], references: [id])
+  members FamilyMember[]
+  budgets Budget[]
+}
+
+model FamilyMember {
+  id            String     @id @default(cuid())
+  familyGroupId String
+  userId        String
+  role          FamilyRole @default(EDITOR)
+  joinedAt      DateTime   @default(now())
+
+  familyGroup FamilyGroup @relation(fields: [familyGroupId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([familyGroupId, userId])
+}
+
+model IncomeSource {
+  id        String   @id @default(cuid())
+  userId    String
+  name      String
+  amount    Decimal  @db.Decimal(12, 2)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  budgetIncomes BudgetIncome[]
+}
+
+model IncomeDeduction {
+  id       String        @id @default(cuid())
+  budgetId String
+  name     String
+  type     DeductionType
+  value    Decimal       @db.Decimal(12, 2)
+  isActive Boolean       @default(true)
+
+  budget Budget @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+}
+
+model BudgetCategory {
+  id                String  @id @default(cuid())
+  name              String
+  defaultPercentage Decimal @db.Decimal(5, 2)
+  order             Int
+
+  subcategories       BudgetSubcategory[]
+  expenseCategories   ExpenseCategory[]
+  userPercentages     UserCategoryPercentage[]
+}
+
+model BudgetSubcategory {
+  id         String @id @default(cuid())
+  categoryId String
+  name       String
+
+  category          BudgetCategory    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  expenseCategories ExpenseCategory[]
+}
+
+model UserCategoryPercentage {
+  id         String  @id @default(cuid())
+  userId     String
+  categoryId String
+  percentage Decimal @db.Decimal(5, 2)
+
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category BudgetCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId])
+}
+
+model ExpenseCategory {
+  id            String  @id @default(cuid())
+  userId        String
+  name          String
+  color         String
+  categoryId    String
+  subcategoryId String?
+
+  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  budgetCategory   BudgetCategory     @relation(fields: [categoryId], references: [id])
+  subcategory      BudgetSubcategory? @relation(fields: [subcategoryId], references: [id])
+  templateItems    BudgetTemplateItem[]
+  budgetPlans      BudgetExpensePlan[]
+  expenses         Expense[]
+}
+
+model BudgetTemplate {
+  id     String @id @default(cuid())
+  userId String
+  name   String
+
+  user    User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items   BudgetTemplateItem[]
+  budgets Budget[]
+}
+
+model BudgetTemplateItem {
+  id                String  @id @default(cuid())
+  templateId        String
+  expenseCategoryId String
+  plannedAmount     Decimal @db.Decimal(12, 2)
+
+  template        BudgetTemplate  @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  expenseCategory ExpenseCategory @relation(fields: [expenseCategoryId], references: [id])
+}
+
+model Budget {
+  id                   String   @id @default(cuid())
+  userId               String
+  familyGroupId        String?
+  name                 String?
+  startDate            DateTime
+  endDate              DateTime
+  totalIncome          Decimal  @db.Decimal(12, 2) @default(0)
+  totalPlanned         Decimal  @db.Decimal(12, 2) @default(0)
+  createdFromTemplateId String?
+  createdAt            DateTime @default(now())
+
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  familyGroup       FamilyGroup?        @relation(fields: [familyGroupId], references: [id])
+  createdFromTemplate BudgetTemplate?   @relation(fields: [createdFromTemplateId], references: [id])
+  incomes           BudgetIncome[]
+  deductions        IncomeDeduction[]
+  expensePlans      BudgetExpensePlan[]
+  expenses          Expense[]
+}
+
+model BudgetIncome {
+  id             String @id @default(cuid())
+  budgetId       String
+  incomeSourceId String
+
+  budget       Budget       @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  incomeSource IncomeSource @relation(fields: [incomeSourceId], references: [id])
+
+  @@unique([budgetId, incomeSourceId])
+}
+
+model BudgetExpensePlan {
+  id                String  @id @default(cuid())
+  budgetId          String
+  expenseCategoryId String
+  plannedAmount     Decimal @db.Decimal(12, 2)
+
+  budget          Budget          @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  expenseCategory ExpenseCategory @relation(fields: [expenseCategoryId], references: [id])
+
+  @@unique([budgetId, expenseCategoryId])
+}
+
+model Expense {
+  id                String   @id @default(cuid())
+  userId            String
+  budgetId          String
+  expenseCategoryId String
+  name              String
+  amount            Decimal  @db.Decimal(12, 2)
+  date              DateTime
+  createdAt         DateTime @default(now())
+
+  budget          Budget          @relation(fields: [budgetId], references: [id], onDelete: Cascade)
+  expenseCategory ExpenseCategory @relation(fields: [expenseCategoryId], references: [id])
+}
