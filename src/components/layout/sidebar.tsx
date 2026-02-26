@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Receipt, BookTemplate, Wallet, User, Settings } from "lucide-react";
+import { LayoutDashboard, Receipt, BookTemplate, Wallet, User, Settings, Tags } from "lucide-react";
 import { UserButton } from "@clerk/nextjs";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
@@ -16,6 +16,7 @@ const navItems: NavItem[] = [
 ];
 
 const bottomItems: NavItem[] = [
+  { href: "/categorias", label: "Categorías", icon: Tags },
   { href: "/estructura", label: "Estructura", icon: Settings },
   { href: "/perfil", label: "Perfil", icon: User },
 ];
@@ -26,7 +27,7 @@ export function Sidebar() {
   return (
     <aside className="hidden md:flex flex-col w-64 border-r bg-background h-screen sticky top-0">
       <div className="flex items-center h-16 px-6 border-b">
-        <span className="text-lg font-semibold tracking-tight">Mi Presupuesto</span>
+        <span className="text-lg font-semibold tracking-tight">Nidaro</span>
       </div>
 
       <nav className="flex-1 overflow-y-auto p-4 space-y-1">

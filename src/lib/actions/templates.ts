@@ -16,9 +16,16 @@ const templateItemSchema = z.object({
   plannedAmount: z.coerce.number().positive("El monto debe ser positivo"),
 });
 
-export type TemplateItemWithCategory = BudgetTemplateItem & {
-  expenseCategory: ExpenseCategory & { budgetCategory: BudgetCategory };
+type SerializedBudgetCategory = Omit<BudgetCategory, "defaultPercentage"> & { defaultPercentage: number };
+type SerializedTemplateItem = Omit<BudgetTemplateItem, "plannedAmount"> & {
+  plannedAmount: number;
+  expenseCategory: ExpenseCategory & { 
+    budgetCategory: SerializedBudgetCategory;
+    subcategory: { id: string; name: string } | null;
+  };
 };
+
+export type TemplateItemWithCategory = SerializedTemplateItem;
 
 export type TemplateWithItems = BudgetTemplate & {
   items: TemplateItemWithCategory[];
@@ -26,16 +33,31 @@ export type TemplateWithItems = BudgetTemplate & {
 
 export async function getTemplates(): Promise<TemplateWithItems[]> {
   const user = await getCurrentUser();
-  return prisma.budgetTemplate.findMany({
+  const rows = await prisma.budgetTemplate.findMany({
     where: { userId: user.id },
     include: {
       items: {
-        include: { expenseCategory: { include: { budgetCategory: true } } },
+        include: { expenseCategory: { include: { budgetCategory: true, subcategory: true } } },
         orderBy: { expenseCategory: { name: "asc" } },
       },
     },
     orderBy: { name: "asc" },
   });
+
+  return rows.map((template) => ({
+    ...template,
+    items: template.items.map((item) => ({
+      ...item,
+      plannedAmount: Number(item.plannedAmount),
+      expenseCategory: {
+        ...item.expenseCategory,
+        budgetCategory: {
+          ...item.expenseCategory.budgetCategory,
+          defaultPercentage: Number(item.expenseCategory.budgetCategory.defaultPercentage),
+        },
+      },
+    })),
+  }));
 }
 
 export async function createTemplate(name: string): Promise<ActionResult<BudgetTemplate>> {
@@ -78,10 +100,12 @@ export async function deleteTemplate(id: string): Promise<ActionResult> {
   }
 }
 
+type SerializedTemplateItem = Omit<BudgetTemplateItem, "plannedAmount"> & { plannedAmount: number };
+
 export async function upsertTemplateItem(
   templateId: string,
   data: z.infer<typeof templateItemSchema>
-): Promise<ActionResult<BudgetTemplateItem>> {
+): Promise<ActionResult<SerializedTemplateItem>> {
   try {
     const user = await getCurrentUser();
     await prisma.budgetTemplate.findUniqueOrThrow({ where: { id: templateId, userId: user.id } });
@@ -103,7 +127,7 @@ export async function upsertTemplateItem(
       });
     }
     revalidatePath("/plantillas");
-    return { success: true, data: item };
+    return { success: true, data: { ...item, plannedAmount: Number(item.plannedAmount) } };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Error desconocido" };
   }

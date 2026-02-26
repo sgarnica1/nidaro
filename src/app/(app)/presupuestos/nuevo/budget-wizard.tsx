@@ -38,8 +38,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { createBudget } from "@/lib/actions/budgets";
-import { createIncomeSource } from "@/lib/actions/income";
-import type { IncomeSource, BudgetTemplate } from "@/generated/prisma/client";
+import { createIncomeSource, type SerializedIncomeSource } from "@/lib/actions/income";
+import type { BudgetTemplate } from "@/generated/prisma/client";
 
 const schema = z.object({
   name: z.string().optional(),
@@ -61,7 +61,7 @@ const schema = z.object({
 type FormValues = z.infer<typeof schema>;
 
 type Props = {
-  incomeSources: IncomeSource[];
+  incomeSources: SerializedIncomeSource[];
   templates: BudgetTemplate[];
 };
 
@@ -77,7 +77,7 @@ export function BudgetWizard({ incomeSources: initialSources, templates }: Props
   const [pending, startTransition] = useTransition();
 
   // Local income sources — starts from server-fetched, grows as user adds inline
-  const [incomeSources, setIncomeSources] = useState<IncomeSource[]>(initialSources);
+  const [incomeSources, setIncomeSources] = useState<SerializedIncomeSource[]>(initialSources);
 
   // Range date picker state
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
@@ -111,7 +111,7 @@ export function BudgetWizard({ incomeSources: initialSources, templates }: Props
 
   const grossIncome = incomeSources
     .filter((s) => selectedIncomeIds.includes(s.id) && s.isActive)
-    .reduce((sum, s) => sum + Number(s.amount), 0);
+    .reduce((sum, s) => sum + s.amount, 0);
 
   const totalDeductions = deductions.reduce((sum, d) => {
     const v = Number(d.value) || 0;
@@ -297,8 +297,8 @@ export function BudgetWizard({ incomeSources: initialSources, templates }: Props
                 size="sm"
                 onClick={() => setShowIncomeForm((v) => !v)}
               >
-                <Plus className="h-4 w-4 mr-1" />
-                Agregar
+                <Plus className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Agregar</span>
               </Button>
             </div>
           </CardHeader>
@@ -394,7 +394,7 @@ export function BudgetWizard({ incomeSources: initialSources, templates }: Props
                     {source.name}
                   </span>
                   <span className="text-sm font-medium">
-                    {formatCurrency(Number(source.amount))}
+                    {formatCurrency(source.amount)}
                   </span>
                 </label>
                 {!source.isActive && (
@@ -426,8 +426,8 @@ export function BudgetWizard({ incomeSources: initialSources, templates }: Props
                   append({ name: "Diezmo", type: "PERCENTAGE", value: 10 })
                 }
               >
-                <Plus className="h-4 w-4 mr-1" />
-                Agregar
+                <Plus className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">Agregar</span>
               </Button>
             </div>
           </CardHeader>

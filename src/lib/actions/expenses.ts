@@ -15,22 +15,38 @@ const expenseSchema = z.object({
   date: z.string().min(1, "La fecha es requerida"),
 });
 
-export type ExpenseWithCategory = Expense & {
-  expenseCategory: ExpenseCategory & { budgetCategory: BudgetCategory };
+export type ExpenseWithCategory = Omit<Expense, "amount"> & {
+  amount: number;
+  expenseCategory: ExpenseCategory & {
+    budgetCategory: Omit<BudgetCategory, "defaultPercentage"> & { defaultPercentage: number };
+  };
 };
 
 export async function getExpensesByBudget(budgetId: string): Promise<ExpenseWithCategory[]> {
   const user = await getCurrentUser();
-  return prisma.expense.findMany({
+  const rows = await prisma.expense.findMany({
     where: { budgetId, userId: user.id },
     include: { expenseCategory: { include: { budgetCategory: true } } },
     orderBy: { date: "desc" },
   });
+  return rows.map((r) => ({
+    ...r,
+    amount: Number(r.amount),
+    expenseCategory: {
+      ...r.expenseCategory,
+      budgetCategory: {
+        ...r.expenseCategory.budgetCategory,
+        defaultPercentage: Number(r.expenseCategory.budgetCategory.defaultPercentage),
+      },
+    },
+  }));
 }
+
+type SerializedExpense = Omit<Expense, "amount"> & { amount: number };
 
 export async function createExpense(
   data: z.infer<typeof expenseSchema>
-): Promise<ActionResult<Expense>> {
+): Promise<ActionResult<SerializedExpense>> {
   try {
     const user = await getCurrentUser();
     const parsed = expenseSchema.parse(data);
@@ -46,7 +62,7 @@ export async function createExpense(
     });
     revalidatePath("/dashboard");
     revalidatePath("/gastos");
-    return { success: true, data: expense };
+    return { success: true, data: { ...expense, amount: Number(expense.amount) } };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Error desconocido" };
   }
@@ -55,7 +71,7 @@ export async function createExpense(
 export async function updateExpense(
   id: string,
   data: z.infer<typeof expenseSchema>
-): Promise<ActionResult<Expense>> {
+): Promise<ActionResult<SerializedExpense>> {
   try {
     const user = await getCurrentUser();
     const parsed = expenseSchema.parse(data);
@@ -70,7 +86,7 @@ export async function updateExpense(
     });
     revalidatePath("/dashboard");
     revalidatePath("/gastos");
-    return { success: true, data: expense };
+    return { success: true, data: { ...expense, amount: Number(expense.amount) } };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Error desconocido" };
   }

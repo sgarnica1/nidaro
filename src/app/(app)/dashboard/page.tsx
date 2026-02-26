@@ -48,9 +48,9 @@ export default async function DashboardPage() {
   }
 
   const expenses = await getExpensesByBudget(budget.id);
-  const available = Number(budget.totalIncome);
+  const available = budget.totalIncome;
   const totalReal = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
-  const totalPlanned = Number(budget.totalPlanned);
+  const totalPlanned = budget.totalPlanned;
   const remaining = available - totalReal;
 
   const categoryPercentages: Record<string, number> = Object.fromEntries(
@@ -104,7 +104,30 @@ export default async function DashboardPage() {
         </Card>
       </div>
 
-      <BudgetTable budget={budget} expenses={expenses} categoryPercentages={categoryPercentages} />
+      <BudgetTable
+        budget={{
+          totalIncome: available,
+          expensePlans: budget.expensePlans.map((p) => ({
+            plannedAmount: p.plannedAmount,
+            expenseCategory: {
+              budgetCategory: {
+                id: p.expenseCategory.budgetCategory.id,
+                name: p.expenseCategory.budgetCategory.name,
+              },
+            },
+          })),
+        }}
+        expenses={expenses.map((e) => ({
+          amount: Number(e.amount),
+          expenseCategory: {
+            budgetCategory: {
+              id: e.expenseCategory.budgetCategory.id,
+              name: e.expenseCategory.budgetCategory.name,
+            },
+          },
+        }))}
+        categoryPercentages={categoryPercentages}
+      />
     </div>
   );
 }

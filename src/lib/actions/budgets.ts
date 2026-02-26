@@ -23,26 +23,43 @@ const budgetCreateSchema = z.object({
   deductions: z.array(deductionSchema).default([]),
 });
 
-export type BudgetWithDetails = Budget & {
-  incomes: (BudgetIncome & { incomeSource: { name: string; amount: string | number } })[];
-  deductions: IncomeDeduction[];
-  expensePlans: (BudgetExpensePlan & {
-    expenseCategory: ExpenseCategory & { budgetCategory: BudgetCategory };
-  })[];
+type SerializedBudget = Omit<Budget, "totalIncome" | "totalPlanned"> & {
+  totalIncome: number;
+  totalPlanned: number;
 };
 
-export async function getBudgets(): Promise<Budget[]> {
+type SerializedIncomeDeduction = Omit<IncomeDeduction, "value"> & { value: number };
+
+type SerializedBudgetExpensePlan = Omit<BudgetExpensePlan, "plannedAmount"> & {
+  plannedAmount: number;
+  expenseCategory: ExpenseCategory & {
+    budgetCategory: Omit<BudgetCategory, "defaultPercentage"> & { defaultPercentage: number };
+  };
+};
+
+export type BudgetWithDetails = SerializedBudget & {
+  incomes: (BudgetIncome & { incomeSource: { name: string; amount: number } })[];
+  deductions: SerializedIncomeDeduction[];
+  expensePlans: SerializedBudgetExpensePlan[];
+};
+
+export async function getBudgets(): Promise<SerializedBudget[]> {
   const user = await getCurrentUser();
-  return prisma.budget.findMany({
+  const budgets = await prisma.budget.findMany({
     where: { userId: user.id },
     orderBy: { startDate: "desc" },
   });
+  return budgets.map((b) => ({
+    ...b,
+    totalIncome: Number(b.totalIncome),
+    totalPlanned: Number(b.totalPlanned),
+  }));
 }
 
 export async function getActiveBudget(): Promise<BudgetWithDetails | null> {
   const user = await getCurrentUser();
   const today = new Date();
-  return prisma.budget.findFirst({
+  const budget = await prisma.budget.findFirst({
     where: {
       userId: user.id,
       startDate: { lte: today },
@@ -56,12 +73,42 @@ export async function getActiveBudget(): Promise<BudgetWithDetails | null> {
       },
     },
     orderBy: { createdAt: "desc" },
-  }) as Promise<BudgetWithDetails | null>;
+  });
+
+  if (!budget) return null;
+
+  return {
+    ...budget,
+    totalIncome: Number(budget.totalIncome),
+    totalPlanned: Number(budget.totalPlanned),
+    incomes: budget.incomes.map((inc) => ({
+      ...inc,
+      incomeSource: {
+        ...inc.incomeSource,
+        amount: Number(inc.incomeSource.amount),
+      },
+    })),
+    deductions: budget.deductions.map((d) => ({
+      ...d,
+      value: Number(d.value),
+    })),
+    expensePlans: budget.expensePlans.map((p) => ({
+      ...p,
+      plannedAmount: Number(p.plannedAmount),
+      expenseCategory: {
+        ...p.expenseCategory,
+        budgetCategory: {
+          ...p.expenseCategory.budgetCategory,
+          defaultPercentage: Number(p.expenseCategory.budgetCategory.defaultPercentage),
+        },
+      },
+    })),
+  };
 }
 
 export async function getBudgetById(id: string): Promise<BudgetWithDetails | null> {
   const user = await getCurrentUser();
-  return prisma.budget.findUnique({
+  const budget = await prisma.budget.findUnique({
     where: { id, userId: user.id },
     include: {
       incomes: { include: { incomeSource: { select: { name: true, amount: true } } } },
@@ -70,12 +117,42 @@ export async function getBudgetById(id: string): Promise<BudgetWithDetails | nul
         include: { expenseCategory: { include: { budgetCategory: true } } },
       },
     },
-  }) as Promise<BudgetWithDetails | null>;
+  });
+
+  if (!budget) return null;
+
+  return {
+    ...budget,
+    totalIncome: Number(budget.totalIncome),
+    totalPlanned: Number(budget.totalPlanned),
+    incomes: budget.incomes.map((inc) => ({
+      ...inc,
+      incomeSource: {
+        ...inc.incomeSource,
+        amount: Number(inc.incomeSource.amount),
+      },
+    })),
+    deductions: budget.deductions.map((d) => ({
+      ...d,
+      value: Number(d.value),
+    })),
+    expensePlans: budget.expensePlans.map((p) => ({
+      ...p,
+      plannedAmount: Number(p.plannedAmount),
+      expenseCategory: {
+        ...p.expenseCategory,
+        budgetCategory: {
+          ...p.expenseCategory.budgetCategory,
+          defaultPercentage: Number(p.expenseCategory.budgetCategory.defaultPercentage),
+        },
+      },
+    })),
+  };
 }
 
 export async function createBudget(
   data: z.infer<typeof budgetCreateSchema>
-): Promise<ActionResult<Budget>> {
+): Promise<ActionResult<SerializedBudget>> {
   try {
     const user = await getCurrentUser();
     const parsed = budgetCreateSchema.parse(data);
@@ -139,7 +216,14 @@ export async function createBudget(
 
     revalidatePath("/dashboard");
     revalidatePath("/presupuestos");
-    return { success: true, data: budget };
+    return {
+      success: true,
+      data: {
+        ...budget,
+        totalIncome: Number(budget.totalIncome),
+        totalPlanned: Number(budget.totalPlanned),
+      },
+    };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Error desconocido" };
   }

@@ -14,29 +14,35 @@ const categorySchema = z.object({
   subcategoryId: z.string().optional(),
 });
 
-export type ExpenseCategoryWithRelations = ExpenseCategory & {
-  budgetCategory: BudgetCategory;
+export type ExpenseCategoryWithRelations = Omit<ExpenseCategory, never> & {
+  budgetCategory: Omit<BudgetCategory, "defaultPercentage"> & { defaultPercentage: number };
   subcategory: BudgetSubcategory | null;
 };
 
-export type BudgetCategoryWithSubs = BudgetCategory & {
+export type BudgetCategoryWithSubs = Omit<BudgetCategory, "defaultPercentage"> & {
+  defaultPercentage: number;
   subcategories: BudgetSubcategory[];
 };
 
 export async function getExpenseCategories(): Promise<ExpenseCategoryWithRelations[]> {
   const user = await getCurrentUser();
-  return prisma.expenseCategory.findMany({
+  const rows = await prisma.expenseCategory.findMany({
     where: { userId: user.id },
     include: { budgetCategory: true, subcategory: true },
     orderBy: [{ categoryId: "asc" }, { name: "asc" }],
   });
+  return rows.map((r) => ({
+    ...r,
+    budgetCategory: { ...r.budgetCategory, defaultPercentage: Number(r.budgetCategory.defaultPercentage) },
+  }));
 }
 
 export async function getBudgetCategoriesWithSubs(): Promise<BudgetCategoryWithSubs[]> {
-  return prisma.budgetCategory.findMany({
+  const rows = await prisma.budgetCategory.findMany({
     include: { subcategories: true },
     orderBy: { order: "asc" },
   });
+  return rows.map((r) => ({ ...r, defaultPercentage: Number(r.defaultPercentage) }));
 }
 
 export async function createExpenseCategory(

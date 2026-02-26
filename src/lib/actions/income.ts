@@ -12,17 +12,27 @@ const incomeSchema = z.object({
   amount: z.coerce.number().positive("El monto debe ser positivo"),
 });
 
-export async function getIncomeSources(): Promise<IncomeSource[]> {
+export type SerializedIncomeSource = Omit<IncomeSource, "amount"> & { amount: number };
+
+function serializeIncomeSource(source: IncomeSource): SerializedIncomeSource {
+  return {
+    ...source,
+    amount: Number(source.amount),
+  };
+}
+
+export async function getIncomeSources(): Promise<SerializedIncomeSource[]> {
   const user = await getCurrentUser();
-  return prisma.incomeSource.findMany({
+  const sources = await prisma.incomeSource.findMany({
     where: { userId: user.id },
     orderBy: { createdAt: "asc" },
   });
+  return sources.map(serializeIncomeSource);
 }
 
 export async function createIncomeSource(
   data: z.infer<typeof incomeSchema>
-): Promise<ActionResult<IncomeSource>> {
+): Promise<ActionResult<SerializedIncomeSource>> {
   try {
     const user = await getCurrentUser();
     const parsed = incomeSchema.parse(data);
@@ -30,7 +40,7 @@ export async function createIncomeSource(
       data: { userId: user.id, name: parsed.name, amount: parsed.amount },
     });
     revalidatePath("/ingresos");
-    return { success: true, data: source };
+    return { success: true, data: serializeIncomeSource(source) };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Error desconocido" };
   }
@@ -39,7 +49,7 @@ export async function createIncomeSource(
 export async function updateIncomeSource(
   id: string,
   data: z.infer<typeof incomeSchema>
-): Promise<ActionResult<IncomeSource>> {
+): Promise<ActionResult<SerializedIncomeSource>> {
   try {
     const user = await getCurrentUser();
     const parsed = incomeSchema.parse(data);
@@ -48,7 +58,7 @@ export async function updateIncomeSource(
       data: { name: parsed.name, amount: parsed.amount },
     });
     revalidatePath("/ingresos");
-    return { success: true, data: source };
+    return { success: true, data: serializeIncomeSource(source) };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Error desconocido" };
   }

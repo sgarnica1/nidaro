@@ -1,15 +1,28 @@
 "use client";
 
-import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
-import type { BudgetWithDetails } from "@/lib/actions/budgets";
-import type { ExpenseWithCategory } from "@/lib/actions/expenses";
+import { BudgetChart } from "./budget-chart";
+
+type SerializedExpensePlan = {
+  plannedAmount: number;
+  expenseCategory: { budgetCategory: { id: string; name: string } };
+};
+
+type SerializedBudget = {
+  totalIncome: number;
+  expensePlans: SerializedExpensePlan[];
+};
+
+type SerializedExpense = {
+  amount: number;
+  expenseCategory: { budgetCategory: { id: string; name: string } };
+};
 
 type Props = {
-  budget: BudgetWithDetails;
-  expenses: ExpenseWithCategory[];
+  budget: SerializedBudget;
+  expenses: SerializedExpense[];
   categoryPercentages: Record<string, number>;
 };
 
@@ -28,18 +41,18 @@ function formatCurrency(amount: number) {
 }
 
 export function BudgetTable({ budget, expenses, categoryPercentages }: Props) {
-  const available = Number(budget.totalIncome);
+  const available = budget.totalIncome;
 
   const realByCategory: Record<string, number> = {};
   for (const exp of expenses) {
     const catId = exp.expenseCategory.budgetCategory.id;
-    realByCategory[catId] = (realByCategory[catId] ?? 0) + Number(exp.amount);
+    realByCategory[catId] = (realByCategory[catId] ?? 0) + exp.amount;
   }
 
   const plannedByCategory: Record<string, number> = {};
   for (const plan of budget.expensePlans) {
     const catId = plan.expenseCategory.budgetCategory.id;
-    plannedByCategory[catId] = (plannedByCategory[catId] ?? 0) + Number(plan.plannedAmount);
+    plannedByCategory[catId] = (plannedByCategory[catId] ?? 0) + plan.plannedAmount;
   }
 
   const categoryIds = Array.from(
@@ -80,7 +93,7 @@ export function BudgetTable({ budget, expenses, categoryPercentages }: Props) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border overflow-hidden">
+      <div className="hidden md:block rounded-xl border overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -120,26 +133,14 @@ export function BudgetTable({ budget, expenses, categoryPercentages }: Props) {
         </Table>
       </div>
 
-      <div className="space-y-3">
-        {rows.map((row) => {
-          const pct = row.assignedAmount > 0 ? Math.min((row.realAmount / row.assignedAmount) * 100, 100) : 0;
-          const exceeded = row.realAmount > row.assignedAmount;
-          return (
-            <div key={row.categoryId} className="space-y-1">
-              <div className="flex justify-between text-sm">
-                <span>{row.categoryName}</span>
-                <span className={cn("font-medium", exceeded ? "text-destructive" : "text-muted-foreground")}>
-                  {formatCurrency(row.realAmount)} / {formatCurrency(row.assignedAmount)}
-                </span>
-              </div>
-              <Progress
-                value={pct}
-                className={cn("h-2", exceeded && "[&>div]:bg-destructive")}
-              />
-            </div>
-          );
-        })}
-      </div>
+      <BudgetChart
+        categories={rows.map((row) => ({
+          name: row.categoryName,
+          assigned: row.assignedAmount,
+          planned: row.plannedAmount,
+          real: row.realAmount,
+        }))}
+      />
     </div>
   );
 }

@@ -6,7 +6,8 @@ import { getCurrentUser } from "@/lib/current-user";
 import type { ActionResult } from "@/types";
 import type { BudgetCategory, BudgetSubcategory } from "@/generated/prisma/client";
 
-export type CategoryWithPercentage = BudgetCategory & {
+export type CategoryWithPercentage = Omit<BudgetCategory, "defaultPercentage"> & {
+  defaultPercentage: number;
   userPercentage: number;
   subcategories: BudgetSubcategory[];
 };
@@ -24,6 +25,7 @@ export async function getCategoriesWithPercentages(): Promise<CategoryWithPercen
 
   return categories.map((cat) => ({
     ...cat,
+    defaultPercentage: Number(cat.defaultPercentage),
     userPercentage:
       cat.userPercentages[0]?.percentage !== undefined
         ? Number(cat.userPercentages[0].percentage)

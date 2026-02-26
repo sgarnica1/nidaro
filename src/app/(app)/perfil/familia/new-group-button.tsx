@@ -7,13 +7,6 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
   Form,
   FormControl,
   FormField,
@@ -23,6 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ResponsiveSheet } from "@/components/ui/responsive-sheet";
 import { createFamilyGroup } from "@/lib/actions/family";
 
 const schema = z.object({ name: z.string().min(1, "El nombre es requerido") });
@@ -43,17 +37,21 @@ export function NewGroupButton() {
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button>
-          <Plus className="h-4 w-4 mr-2" />
-          Nuevo grupo
-        </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Crear grupo familiar</DialogTitle>
-        </DialogHeader>
+    <>
+      <Button className="hidden md:flex" onClick={() => setOpen(true)}>
+        <Plus className="h-4 w-4 mr-2" />
+        Nuevo grupo
+      </Button>
+
+      <Button
+        size="icon"
+        className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg md:hidden z-40"
+        onClick={() => setOpen(true)}
+      >
+        <Plus className="h-6 w-6" />
+      </Button>
+
+      <ResponsiveSheet open={open} onOpenChange={setOpen} title="Crear grupo familiar">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -69,15 +67,12 @@ export function NewGroupButton() {
                 </FormItem>
               )}
             />
-            <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? "Creando..." : "Crear"}
-              </Button>
-            </div>
+            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting ? "Creando..." : "Crear"}
+            </Button>
           </form>
         </Form>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveSheet>
+    </>
   );
 }

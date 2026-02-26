@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getIncomeSources } from "@/lib/actions/income";
 import { IncomeForm } from "./income-form";
 import { IncomeList } from "./income-list";
+import { IncomeFAB } from "./income-fab";
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(amount);
@@ -13,7 +14,7 @@ export default async function IngresosPage() {
   const sources = await getIncomeSources();
   const totalActive = sources
     .filter((s) => s.isActive)
-    .reduce((sum, s) => sum + Number(s.amount), 0);
+    .reduce((sum, s) => sum + s.amount, 0);
 
   return (
     <div className="space-y-6">
@@ -23,9 +24,9 @@ export default async function IngresosPage() {
           <p className="text-sm text-muted-foreground">Gestiona tus fuentes de ingreso</p>
         </div>
         <IncomeForm>
-          <Button>
+          <Button className="hidden md:flex">
             <Plus className="h-4 w-4 mr-2" />
-            Agregar
+            Agregar ingreso
           </Button>
         </IncomeForm>
       </div>
@@ -38,6 +39,7 @@ export default async function IngresosPage() {
       </Card>
 
       <IncomeList sources={sources} />
+      <IncomeFAB />
     </div>
   );
 }
