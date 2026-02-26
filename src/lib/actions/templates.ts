@@ -100,12 +100,12 @@ export async function deleteTemplate(id: string): Promise<ActionResult> {
   }
 }
 
-type SerializedTemplateItem = Omit<BudgetTemplateItem, "plannedAmount"> & { plannedAmount: number };
+type SerializedTemplateItemBasic = Omit<BudgetTemplateItem, "plannedAmount"> & { plannedAmount: number };
 
 export async function upsertTemplateItem(
   templateId: string,
   data: z.infer<typeof templateItemSchema>
-): Promise<ActionResult<SerializedTemplateItem>> {
+): Promise<ActionResult<SerializedTemplateItemBasic>> {
   try {
     const user = await getCurrentUser();
     await prisma.budgetTemplate.findUniqueOrThrow({ where: { id: templateId, userId: user.id } });
