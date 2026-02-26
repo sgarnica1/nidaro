@@ -1,14 +1,15 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { getTemplates } from "@/lib/actions/templates";
-import { getExpenseCategories } from "@/lib/actions/expense-categories";
+import { getExpenseCategories, getBudgetCategoriesWithSubs } from "@/lib/actions/expense-categories";
 import { getIncomeSources } from "@/lib/actions/income";
 import { TemplateCard } from "./template-card";
 import { NewTemplateButton } from "./new-template-button";
 
 export default async function PlantillasPage() {
-  const [templates, expenseCategories, incomeSources] = await Promise.all([
+  const [templates, expenseCategories, budgetCategories, incomeSources] = await Promise.all([
     getTemplates(),
     getExpenseCategories(),
+    getBudgetCategoriesWithSubs(),
     getIncomeSources(),
   ]);
 
@@ -42,6 +43,7 @@ export default async function PlantillasPage() {
               key={template.id}
               template={template}
               expenseCategories={expenseCategories}
+              budgetCategories={budgetCategories}
               totalIncome={totalIncome}
             />
           ))}

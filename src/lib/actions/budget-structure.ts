@@ -4,10 +4,11 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/current-user";
 import type { ActionResult } from "@/types";
-import type { BudgetCategory } from "@/generated/prisma/client";
+import type { BudgetCategory, BudgetSubcategory } from "@/generated/prisma/client";
 
 export type CategoryWithPercentage = BudgetCategory & {
   userPercentage: number;
+  subcategories: BudgetSubcategory[];
 };
 
 export async function getCategoriesWithPercentages(): Promise<CategoryWithPercentage[]> {
@@ -17,6 +18,7 @@ export async function getCategoriesWithPercentages(): Promise<CategoryWithPercen
     orderBy: { order: "asc" },
     include: {
       userPercentages: { where: { userId: user.id } },
+      subcategories: { orderBy: { name: "asc" } },
     },
   });
 
@@ -27,6 +29,31 @@ export async function getCategoriesWithPercentages(): Promise<CategoryWithPercen
         ? Number(cat.userPercentages[0].percentage)
         : Number(cat.defaultPercentage),
   }));
+}
+
+export async function createBudgetSubcategory(
+  categoryId: string,
+  name: string
+): Promise<ActionResult<BudgetSubcategory>> {
+  try {
+    const sub = await prisma.budgetSubcategory.create({
+      data: { categoryId, name: name.trim() },
+    });
+    revalidatePath("/estructura");
+    return { success: true, data: sub };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : "Error desconocido" };
+  }
+}
+
+export async function deleteBudgetSubcategory(id: string): Promise<ActionResult> {
+  try {
+    await prisma.budgetSubcategory.delete({ where: { id } });
+    revalidatePath("/estructura");
+    return { success: true, data: undefined };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : "Error desconocido" };
+  }
 }
 
 export async function updateCategoryPercentages(
