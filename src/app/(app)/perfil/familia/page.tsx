@@ -3,12 +3,14 @@ import { getCurrentUser } from "@/lib/current-user";
 import { getMyFamilyGroups } from "@/lib/actions/family";
 import { FamilyGroupCard } from "./family-group-card";
 import { NewGroupButton } from "./new-group-button";
+import { MobileBackButton } from "@/components/ui/mobile-back-button";
 
 export default async function FamiliaPage() {
   const [user, groups] = await Promise.all([getCurrentUser(), getMyFamilyGroups()]);
 
   return (
     <div className="space-y-6">
+      <MobileBackButton href="/perfil" />
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Grupos Familiares</h1>

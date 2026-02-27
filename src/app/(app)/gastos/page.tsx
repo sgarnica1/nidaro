@@ -24,19 +24,17 @@ export default async function GastosPage({
 
   if (rawBudgets.length === 0) {
     return (
-      <div className="max-w-3xl mx-auto min-h-screen">
-        <div className="space-y-6">
-          <h1 className="text-3xl font-semibold tracking-tight">Gastos</h1>
-          <EmptyState
-            icon="receipt"
-            title="Empieza tu primer presupuesto"
-            description="Organiza tus gastos y toma el control de tu dinero este mes."
-            action={{
-              label: "Crear mi presupuesto",
-              href: "/presupuestos/nuevo",
-            }}
-          />
-        </div>
+      <div className="space-y-6">
+        <h1 className="text-3xl font-semibold tracking-tight">Gastos</h1>
+        <EmptyState
+          icon="receipt"
+          title="Empieza tu primer presupuesto"
+          description="Organiza tus gastos y toma el control de tu dinero este mes."
+          action={{
+            label: "Crear mi presupuesto",
+            href: "/presupuestos/nuevo",
+          }}
+        />
       </div>
     );
   }
@@ -49,18 +47,12 @@ export default async function GastosPage({
     (selectedId ? rawBudgets.find((b) => b.id === selectedId) : null) ?? activeBudget;
 
   const expenses = await getExpensesByBudget(selectedBudget.id);
-  const totalReal = expenses.reduce((sum, e) => sum + e.amount, 0);
-
-  const budgetOptions = rawBudgets.map((b) => ({ id: b.id, label: budgetLabel(b) }));
 
   return (
     <GastosClient
       expenses={expenses}
       expenseCategories={expenseCategories}
       budgetId={selectedBudget.id}
-      budgetOptions={budgetOptions}
-      selectedBudgetId={selectedBudget.id}
-      totalReal={totalReal}
     />
   );
 }

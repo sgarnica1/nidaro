@@ -24,12 +24,19 @@ export async function getCategoriesWithPercentages(): Promise<CategoryWithPercen
   });
 
   return categories.map((cat) => ({
-    ...cat,
+    id: cat.id,
+    name: cat.name,
+    order: cat.order,
     defaultPercentage: Number(cat.defaultPercentage),
     userPercentage:
       cat.userPercentages[0]?.percentage !== undefined
         ? Number(cat.userPercentages[0].percentage)
         : Number(cat.defaultPercentage),
+    subcategories: cat.subcategories.map((sub) => ({
+      id: sub.id,
+      categoryId: sub.categoryId,
+      name: sub.name,
+    })),
   }));
 }
 

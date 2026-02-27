@@ -10,7 +10,7 @@ import type { Expense, ExpenseCategory, BudgetCategory, BudgetSubcategory } from
 const expenseSchema = z.object({
   budgetId: z.string().min(1),
   expenseCategoryId: z.string().min(1, "Selecciona una categoría"),
-  name: z.string().min(1, "El nombre es requerido"),
+  name: z.string().default(""),
   amount: z.coerce.number().positive("El monto debe ser positivo"),
   date: z.string().min(1, "La fecha es requerida"),
 });
@@ -75,7 +75,7 @@ export async function createExpense(
         userId: user.id,
         budgetId: parsed.budgetId,
         expenseCategoryId: parsed.expenseCategoryId,
-        name: parsed.name,
+        name: parsed.name || "Sin descripción",
         amount: parsed.amount,
         date: new Date(parsed.date),
       },
@@ -99,7 +99,7 @@ export async function updateExpense(
       where: { id, userId: user.id },
       data: {
         expenseCategoryId: parsed.expenseCategoryId,
-        name: parsed.name,
+        name: parsed.name || "Sin descripción",
         amount: parsed.amount,
         date: new Date(parsed.date),
       },

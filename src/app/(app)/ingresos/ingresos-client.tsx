@@ -15,7 +15,7 @@ export function IngresosClient({ sources, totalActive }: Props) {
 
   return (
     <>
-      <IncomeList sources={sources} onAddIncome={() => setIsFormOpen(true)} />
+      <IncomeList sources={sources} totalActive={totalActive} onAddIncome={() => setIsFormOpen(true)} />
       {isFormOpen && (
         <IncomeForm open={isFormOpen} onOpenChange={setIsFormOpen}>
           <span className="sr-only">Trigger</span>

@@ -17,16 +17,17 @@ type Props = {
   title: string;
   trigger?: React.ReactNode;
   children: React.ReactNode;
+  showDragHandle?: boolean;
 };
 
-export function ResponsiveSheet({ open, onOpenChange, title, trigger, children }: Props) {
+export function ResponsiveSheet({ open, onOpenChange, title, trigger, children, showDragHandle = true }: Props) {
   const isMobile = useIsMobile();
 
   const contentClassName = useMemo(
     () =>
       isMobile
-        ? "max-h-[85dvh] rounded-t-2xl border-t px-4 pt-6 pb-16 safe-area-inset-bottom overflow-y-auto"
-        : "overflow-y-auto w-[400px] sm:w-[440px] px-6 rounded-l-2xl shadow-lg",
+        ? "h-[90vh] max-h-[90vh] rounded-t-[24px] rounded-b-none border-none p-0 flex flex-col bg-[#FFFFFF]"
+        : "overflow-y-auto w-[400px] sm:w-[440px] px-6 shadow-lg pt-6",
     [isMobile]
   );
 
@@ -35,6 +36,7 @@ export function ResponsiveSheet({ open, onOpenChange, title, trigger, children }
       {trigger && <SheetTrigger asChild>{trigger}</SheetTrigger>}
       <SheetContent
         side={isMobile ? "bottom" : "right"}
+        showCloseButton={!isMobile}
         className={cn(contentClassName, !isMobile && "flex flex-col")}
         onInteractOutside={(e) => {
           const target = e.target as HTMLElement;
@@ -56,14 +58,30 @@ export function ResponsiveSheet({ open, onOpenChange, title, trigger, children }
           }
         }}
         onEscapeKeyDown={() => {
-          // Don't prevent escape if combobox is open - let it close the combobox first
-          // The Sheet will close on the next escape press if combobox is already closed
         }}
       >
-        <SheetHeader className="mb-4 p-0">
-          <SheetTitle>{title}</SheetTitle>
-        </SheetHeader>
-        {children}
+        {isMobile ? (
+          <>
+            {showDragHandle && (
+              <div className="flex justify-center pt-3 pb-0 shrink-0">
+                <div className="w-8 h-1 bg-[#D1D5DB] rounded-full" />
+              </div>
+            )}
+            <SheetHeader className="px-4 pt-5 pb-0 shrink-0 border-none">
+              <SheetTitle className="text-[18px] font-bold text-[#111111]">{title}</SheetTitle>
+            </SheetHeader>
+            <div className="flex-1 overflow-y-auto px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
+              {children}
+            </div>
+          </>
+        ) : (
+          <>
+            <SheetHeader className="mb-4 p-0">
+              <SheetTitle>{title}</SheetTitle>
+            </SheetHeader>
+            {children}
+          </>
+        )}
       </SheetContent>
     </Sheet>
   );

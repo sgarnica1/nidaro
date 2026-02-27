@@ -5,7 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/current-user";
 import type { ActionResult } from "@/types";
-import type { BudgetTemplate, BudgetTemplateItem, ExpenseCategory, BudgetCategory } from "@/generated/prisma/client";
+import type { BudgetTemplate, BudgetTemplateItem, ExpenseCategory, BudgetCategory, BudgetSubcategory } from "@/generated/prisma/client";
 
 const templateSchema = z.object({
   name: z.string().min(1, "El nombre es requerido"),
@@ -21,7 +21,7 @@ type SerializedTemplateItem = Omit<BudgetTemplateItem, "plannedAmount"> & {
   plannedAmount: number;
   expenseCategory: ExpenseCategory & { 
     budgetCategory: SerializedBudgetCategory;
-    subcategory: { id: string; name: string } | null;
+    subcategory: BudgetSubcategory | null;
   };
 };
 
@@ -50,11 +50,25 @@ export async function getTemplates(): Promise<TemplateWithItems[]> {
       ...item,
       plannedAmount: Number(item.plannedAmount),
       expenseCategory: {
-        ...item.expenseCategory,
+        id: item.expenseCategory.id,
+        userId: item.expenseCategory.userId,
+        name: item.expenseCategory.name,
+        color: item.expenseCategory.color,
+        categoryId: item.expenseCategory.categoryId,
+        subcategoryId: item.expenseCategory.subcategoryId,
         budgetCategory: {
-          ...item.expenseCategory.budgetCategory,
+          id: item.expenseCategory.budgetCategory.id,
+          name: item.expenseCategory.budgetCategory.name,
+          order: item.expenseCategory.budgetCategory.order,
           defaultPercentage: Number(item.expenseCategory.budgetCategory.defaultPercentage),
         },
+        subcategory: item.expenseCategory.subcategory
+          ? {
+              id: item.expenseCategory.subcategory.id,
+              categoryId: item.expenseCategory.subcategory.categoryId,
+              name: item.expenseCategory.subcategory.name,
+            }
+          : null,
       },
     })),
   }));

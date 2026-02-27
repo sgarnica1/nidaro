@@ -77,7 +77,7 @@ export function TemplateItemForm({
 
   // First filter by budget category, then exclude already added categories
   const filteredCategories = (filterBudgetCategoryId
-    ? expenseCategories.filter((c) => c.categoryId === filterBudgetCategoryId)
+    ? expenseCategories.filter((c) => c.budgetCategory.id === filterBudgetCategoryId)
     : expenseCategories
   ).filter((c) => !existingItemCategoryIds.includes(c.id));
 
@@ -144,7 +144,8 @@ export function TemplateItemForm({
       trigger={children}
     >
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
+          <div className="space-y-4 flex-1">
           <FormField
             control={form.control}
             name="expenseCategoryId"
@@ -181,12 +182,14 @@ export function TemplateItemForm({
                         return cat?.name || "";
                       }}
                     >
+                        <FormControl>
                       <ComboboxInput
                         placeholder="Buscar categoría..."
                         showClear
                         className="w-full"
                       />
-                      <ComboboxContent className="z-100">
+                        </FormControl>
+                      <ComboboxContent className="z-[200]">
                         <ComboboxEmpty>No se encontraron categorías.</ComboboxEmpty>
                         <ComboboxList>
                           {(id: string) => {
@@ -305,10 +308,11 @@ export function TemplateItemForm({
               </FormItem>
             )}
           />
-
+          </div>
+          <div className="sticky bottom-0 bg-background border-t pt-4 pb-4 -mx-4 px-4 mt-auto">
           <Button
             type="submit"
-            className="w-full"
+              className="w-full h-12 text-base"
             disabled={form.formState.isSubmitting || filteredCategories.length === 0}
           >
             {form.formState.isSubmitting ? (
@@ -316,6 +320,7 @@ export function TemplateItemForm({
             ) : null}
             Agregar
           </Button>
+          </div>
         </form>
       </Form>
     </ResponsiveSheet>
