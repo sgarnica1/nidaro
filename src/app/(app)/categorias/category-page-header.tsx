@@ -18,7 +18,7 @@ export function CategoryPageHeader({ budgetCategories }: Props) {
           <p className="text-sm text-muted-foreground">Organiza tus gastos en categorías</p>
         </div>
         <CategoryForm budgetCategories={budgetCategories}>
-          <Button className="hidden md:flex">
+          <Button className="hidden md:flex bg-primary hover:bg-primary/90">
             <Plus className="h-4 w-4 mr-2" />
             Nueva categoría
           </Button>
@@ -28,7 +28,7 @@ export function CategoryPageHeader({ budgetCategories }: Props) {
       <CategoryForm budgetCategories={budgetCategories}>
         <Button
           size="icon"
-          className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg md:hidden z-40"
+          className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg md:hidden z-40 bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-200"
         >
           <Plus className="h-6 w-6" />
         </Button>

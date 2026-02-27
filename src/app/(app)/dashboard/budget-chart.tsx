@@ -27,7 +27,7 @@ export function BudgetChart({ categories }: Props) {
   const options = useMemo(() => {
     return {
       chart: {
-        type: "bar" as const,
+        type: "column" as const,
         backgroundColor: "transparent",
         style: { fontFamily: "inherit" },
       },
@@ -35,9 +35,12 @@ export function BudgetChart({ categories }: Props) {
       xAxis: {
         categories: categories.map((c) => c.name),
         labels: { style: { fontSize: "13px" } },
+        gridLineColor: "transparent",
       },
       yAxis: {
         title: { text: undefined },
+        gridLineColor: "#e2e8f0",
+        gridLineWidth: 1,
         labels: {
           formatter() {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -53,6 +56,14 @@ export function BudgetChart({ categories }: Props) {
       },
       tooltip: {
         shared: true,
+        borderRadius: 12,
+        shadow: {
+          color: "rgba(0, 0, 0, 0.1)",
+          offsetX: 0,
+          offsetY: 4,
+          opacity: 0.1,
+          width: 8,
+        },
         formatter() {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const points = (this as any).points ?? [];
@@ -68,25 +79,25 @@ export function BudgetChart({ categories }: Props) {
         },
       },
       plotOptions: {
-        bar: { borderRadius: 4, groupPadding: 0.1 },
+        column: { borderRadius: 8, groupPadding: 0.15 },
       },
       series: [
         {
-          type: "bar" as const,
+          type: "column" as const,
           name: "Asignado",
-          color: "#94a3b8",
+          color: "#64748b",
           data: categories.map((c) => c.assigned),
         },
         {
-          type: "bar" as const,
+          type: "column" as const,
           name: "Planeado",
-          color: "#818cf8",
+          color: "#52796f",
           data: categories.map((c) => c.planned),
         },
         {
-          type: "bar" as const,
+          type: "column" as const,
           name: "Real",
-          color: "#22c55e",
+          color: "#10b981",
           data: categories.map((c) => c.real),
         },
       ],

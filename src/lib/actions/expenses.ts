@@ -5,7 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/current-user";
 import type { ActionResult } from "@/types";
-import type { Expense, ExpenseCategory, BudgetCategory } from "@/generated/prisma/client";
+import type { Expense, ExpenseCategory, BudgetCategory, BudgetSubcategory } from "@/generated/prisma/client";
 
 const expenseSchema = z.object({
   budgetId: z.string().min(1),
@@ -19,6 +19,7 @@ export type ExpenseWithCategory = Omit<Expense, "amount"> & {
   amount: number;
   expenseCategory: ExpenseCategory & {
     budgetCategory: Omit<BudgetCategory, "defaultPercentage"> & { defaultPercentage: number };
+    subcategory: BudgetSubcategory | null;
   };
 };
 
@@ -45,7 +46,7 @@ async function getExpensesByBudgetCached(budgetId: string, userId: string): Prom
 async function getExpensesByBudgetUncached(budgetId: string, userId: string): Promise<ExpenseWithCategory[]> {
   const rows = await prisma.expense.findMany({
     where: { budgetId, userId },
-    include: { expenseCategory: { include: { budgetCategory: true } } },
+    include: { expenseCategory: { include: { budgetCategory: true, subcategory: true } } },
     orderBy: { date: "desc" },
   });
   return rows.map((r) => ({

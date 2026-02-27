@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useIsMobile } from "@/hooks/use-is-mobile";
+import { cn } from "@/lib/utils";
 import {
   Sheet,
   SheetContent,
@@ -24,8 +25,8 @@ export function ResponsiveSheet({ open, onOpenChange, title, trigger, children }
   const contentClassName = useMemo(
     () =>
       isMobile
-        ? "max-h-[85dvh] min-h-[50dvh] overflow-y-auto rounded-t-2xl border-t px-4 pt-6 pb-6 safe-area-inset-bottom"
-        : "overflow-y-auto w-[400px] sm:w-[440px] px-6",
+        ? "max-h-[85dvh] rounded-t-2xl border-t px-4 pt-6 pb-6 mb-16 safe-area-inset-bottom overflow-y-auto"
+        : "overflow-y-auto w-[400px] sm:w-[440px] px-6 rounded-l-2xl shadow-lg",
     [isMobile]
   );
 
@@ -34,7 +35,7 @@ export function ResponsiveSheet({ open, onOpenChange, title, trigger, children }
       {trigger && <SheetTrigger asChild>{trigger}</SheetTrigger>}
       <SheetContent
         side={isMobile ? "bottom" : "right"}
-        className={contentClassName}
+        className={cn(contentClassName, !isMobile && "flex flex-col")}
         onInteractOutside={(e) => {
           const target = e.target as HTMLElement;
           let element: HTMLElement | null = target;
@@ -59,7 +60,7 @@ export function ResponsiveSheet({ open, onOpenChange, title, trigger, children }
           // The Sheet will close on the next escape press if combobox is already closed
         }}
       >
-        <SheetHeader className="mb-4 p-0 md:pt-4">
+        <SheetHeader className="mb-4 p-0">
           <SheetTitle>{title}</SheetTitle>
         </SheetHeader>
         {children}
