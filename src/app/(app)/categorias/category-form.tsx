@@ -122,7 +122,7 @@ export function CategoryForm({ budgetCategories, expenseCategory, defaultCategor
       trigger={children}
     >
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pb-4">
           <FormField
             control={form.control}
             name="name"
@@ -217,9 +217,11 @@ export function CategoryForm({ budgetCategories, expenseCategory, defaultCategor
             )}
           />
 
-          <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? "Guardando..." : "Guardar"}
-          </Button>
+          <div className="sticky bottom-0 bg-background pt-4 pb-2 -mx-4 px-4 border-t mt-6 md:static md:border-t-0 md:pt-0 md:pb-0 md:mx-0">
+            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting ? "Guardando..." : "Guardar"}
+            </Button>
+          </div>
         </form>
       </Form>
     </ResponsiveSheet>
