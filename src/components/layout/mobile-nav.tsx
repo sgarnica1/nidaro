@@ -20,6 +20,7 @@ export function MobileNav() {
   const pathname = usePathname();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const isWizardOpen = pathname === "/presupuestos/nuevo";
+  const isTemplateDetailPage = pathname.startsWith("/plantillas/") && pathname !== "/plantillas";
 
   useEffect(() => {
     const checkSheetOpen = () => {
@@ -46,7 +47,7 @@ export function MobileNav() {
       transition={{ duration: 0.3, ease: "easeOut" }}
       className={cn(
         "fixed bottom-6 left-4 right-4 z-50 rounded-2xl border border-border/30 bg-white/70 backdrop-blur-3xl shadow-xl md:hidden",
-        (isSheetOpen || isWizardOpen) && "hidden"
+        (isSheetOpen || isWizardOpen || isTemplateDetailPage) && "hidden"
       )}
     >
       <div className="flex h-16 items-center justify-around px-2">

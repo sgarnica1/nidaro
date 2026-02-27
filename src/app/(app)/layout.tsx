@@ -9,9 +9,42 @@ import { MobileNav } from "@/components/layout/mobile-nav";
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
+  const isTemplateDetailPage = pathname.startsWith("/plantillas/") && pathname !== "/plantillas" && !pathname.includes("/agregar-gasto");
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  // Suppress non-critical Radix UI draggable error
+  useEffect(() => {
+    const handleError = (event: ErrorEvent) => {
+      // Suppress the releasePointerCapture error from Radix UI draggable
+      if (
+        event.error?.message?.includes("releasePointerCapture") ||
+        event.error?.message?.includes("Failed to execute 'releasePointerCapture'") ||
+        event.message?.includes("releasePointerCapture")
+      ) {
+        event.preventDefault();
+        return false;
+      }
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      // Suppress the releasePointerCapture error from Radix UI draggable
+      if (
+        event.reason?.message?.includes("releasePointerCapture") ||
+        event.reason?.message?.includes("Failed to execute 'releasePointerCapture'")
+      ) {
+        event.preventDefault();
+      }
+    };
+
+    window.addEventListener("error", handleError);
+    window.addEventListener("unhandledrejection", handleUnhandledRejection);
+    return () => {
+      window.removeEventListener("error", handleError);
+      window.removeEventListener("unhandledrejection", handleUnhandledRejection);
+    };
   }, []);
 
   useEffect(() => {
@@ -19,6 +52,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   }, [pathname, mounted]);
+
+  if (isTemplateDetailPage) {
+    return <>{children}</>;
+  }
 
   if (!mounted) {
     return (

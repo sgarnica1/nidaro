@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
@@ -26,6 +26,7 @@ type Props = {
 export function NewTemplateSheet({ open, onOpenChange }: Props) {
   const form = useForm({ resolver: zodResolver(schema), defaultValues: { name: "" } });
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const nameValue = useWatch({ control: form.control, name: "name" });
 
   useEffect(() => {
     if (open) {
@@ -84,7 +85,7 @@ export function NewTemplateSheet({ open, onOpenChange }: Props) {
             </button>
             <Button
               type="submit"
-              disabled={form.formState.isSubmitting || !form.getValues("name")}
+              disabled={form.formState.isSubmitting || !nameValue || nameValue.trim() === ""}
               className="w-full h-[52px] text-base font-bold rounded-[14px] bg-[#1C3D2E] hover:bg-[#1C3D2E]/90 text-white disabled:bg-[#9CA3AF] disabled:opacity-50 active:scale-[0.98] transition-transform"
             >
               {form.formState.isSubmitting ? "Creando..." : "Crear plantilla"}

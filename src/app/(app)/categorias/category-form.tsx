@@ -5,7 +5,6 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ChevronRight } from "lucide-react";
-import { toast } from "sonner";
 import {
   Form,
   FormControl,
@@ -113,13 +112,6 @@ export function CategoryForm({ budgetCategories, expenseCategory, defaultCategor
     if (result.success) {
       setOpen(false);
       form.reset();
-      toast.success(expenseCategory ? "Categoría actualizada" : "Categoría creada", {
-        duration: 2500,
-        style: {
-          backgroundColor: "#10B981",
-          color: "white",
-        },
-      });
     }
   }
 

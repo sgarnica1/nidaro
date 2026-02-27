@@ -1,13 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { TemplateWithItems } from "@/lib/actions/templates";
 import type { ExpenseCategoryWithRelations, BudgetCategoryWithSubs } from "@/lib/actions/expense-categories";
 import { EnhancedTemplateCard } from "./enhanced-template-card";
-import { TemplateDetailSheet } from "./template-detail-sheet";
 import { NewTemplateSheet } from "./new-template-button";
 import { TemplateInfoSheet } from "./template-info-sheet";
 
@@ -19,9 +19,8 @@ type Props = {
 };
 
 export function TemplatesClient({ templates, expenseCategories, budgetCategories, totalIncome }: Props) {
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const router = useRouter();
   const [newTemplateOpen, setNewTemplateOpen] = useState(false);
-  const selectedTemplate = templates.find((t) => t.id === selectedTemplateId) ?? null;
 
   return (
     <div className="space-y-6">
@@ -78,11 +77,8 @@ export function TemplatesClient({ templates, expenseCategories, budgetCategories
                   <EnhancedTemplateCard
                     template={template}
                     totalIncome={totalIncome}
-                    onClick={() => setSelectedTemplateId(template.id)}
-                    onUse={() => {
-                      // TODO: Navigate to budget creation with template
-                      setSelectedTemplateId(template.id);
-                    }}
+                    onClick={() => router.push(`/plantillas/${template.id}`)}
+                    onUse={() => router.push(`/plantillas/${template.id}`)}
                   />
                 </motion.div>
               ))}
@@ -106,17 +102,6 @@ export function TemplatesClient({ templates, expenseCategories, budgetCategories
               </Button>
             </div>
           )}
-
-          <TemplateDetailSheet
-            template={selectedTemplate}
-            expenseCategories={expenseCategories}
-            budgetCategories={budgetCategories}
-            totalIncome={totalIncome}
-            open={selectedTemplateId !== null}
-            onOpenChange={(open) => {
-              if (!open) setSelectedTemplateId(null);
-            }}
-          />
         </>
       )}
 

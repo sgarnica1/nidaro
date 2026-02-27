@@ -14,7 +14,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { TemplateItemForm } from "./template-item-form";
 import { deleteTemplate, deleteTemplateItem, upsertTemplateItem, type TemplateWithItems } from "@/lib/actions/templates";
 import type { ExpenseCategoryWithRelations, BudgetCategoryWithSubs } from "@/lib/actions/expense-categories";
 import { Input } from "@/components/ui/input";
@@ -53,14 +52,6 @@ function getCategoryIcon(category: ExpenseCategoryWithRelations) {
   return IconMap[category.name] || category.name.charAt(0).toUpperCase();
 }
 
-function darkenHex(hex: string, factor = 0.7): string {
-  const clean = hex.replace("#", "");
-  const r = Math.floor(parseInt(clean.substring(0, 2), 16) * factor);
-  const g = Math.floor(parseInt(clean.substring(2, 4), 16) * factor);
-  const b = Math.floor(parseInt(clean.substring(4, 6), 16) * factor);
-  return `rgb(${r}, ${g}, ${b})`;
-}
-
 const CATEGORY_COLORS: Record<string, string> = {
   Necesidades: "#3B82F6",
   Gustos: "#F59E0B",
@@ -69,7 +60,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 export function TemplateCard({
   template,
-  expenseCategories: initialExpenseCategories,
+  expenseCategories: _expenseCategories,
   budgetCategories,
   totalIncome,
 }: Props) {
@@ -80,6 +71,7 @@ export function TemplateCard({
   const [editingAmount, setEditingAmount] = useState<string>("");
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [swipedItemId, setSwipedItemId] = useState<string | null>(null);
+  const [confirmDeleteText, setConfirmDeleteText] = useState("");
 
   // Close swipe on outside click
   useEffect(() => {
@@ -94,7 +86,6 @@ export function TemplateCard({
       return () => document.removeEventListener("click", handleClick);
     }
   }, [swipedItemId]);
-  const expenseCategories = initialExpenseCategories;
 
   const totalPlanned = template.items.reduce((sum, i) => sum + Number(i.plannedAmount), 0);
   const percentOfIncome = totalIncome > 0 ? (totalPlanned / totalIncome) * 100 : 0;
@@ -124,9 +115,16 @@ export function TemplateCard({
   }, [template.items]);
 
   function handleDeleteTemplate() {
+    if (confirmDeleteText !== template.name) {
+      return;
+    }
     setDeleteOpen(false);
+    setConfirmDeleteText("");
     startTransition(async () => {
-      await deleteTemplate(template.id);
+      const result = await deleteTemplate(template.id);
+      if (result.success) {
+        router.refresh();
+      }
     });
   }
 
@@ -190,40 +188,19 @@ export function TemplateCard({
         return items.length > 0;
       });
       if (firstWithData) {
-        setExpandedSections(new Set([firstWithData.id]));
+        setTimeout(() => {
+          setExpandedSections(new Set([firstWithData.id]));
+        }, 0);
       }
     }
   }, [expandedSections.size, budgetCategories, template.items]);
 
-  const existingCategoryIds = template.items.map((i) => i.expenseCategory.id);
-
   return (
-    <div className="pb-24">
+    <div className="pb-6">
       {/* Header Card */}
       <div className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.04)] p-5 mb-6">
-        <div className="flex items-start justify-between mb-4">
+        <div className="mb-4">
           <h2 className="text-[18px] font-bold text-[#111111]">{template.name}</h2>
-          <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-            <DialogTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-[#DC2626] hover:text-[#DC2626] hover:bg-[#FEE2E2]">
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Eliminar plantilla</DialogTitle>
-                <DialogDescription>
-                  ¿Eliminar &quot;{template.name}&quot;? Esta acción no se puede deshacer.
-                </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setDeleteOpen(false)}>Cancelar</Button>
-                <Button variant="destructive" disabled={pending} onClick={handleDeleteTemplate}>
-                  Eliminar
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
         </div>
 
         {/* Stat Pills */}
@@ -240,8 +217,8 @@ export function TemplateCard({
               percentOfIncome > 50
                 ? "bg-[#FEF3C7] text-[#92400E]"
                 : percentOfIncome > 40
-                ? "bg-[#FDE68A] text-[#78350F]"
-                : "bg-[#D1FAE5] text-[#065F46]"
+                  ? "bg-[#FDE68A] text-[#78350F]"
+                  : "bg-[#D1FAE5] text-[#065F46]"
             )}
           >
             {percentOfIncome.toFixed(1)}%
@@ -368,22 +345,14 @@ export function TemplateCard({
                         <AlertCircle className="h-6 w-6 text-[#6B7280]" />
                       </div>
                       <p className="text-[13px] text-[#6B7280] mb-4">Sin gastos en esta categoría</p>
-                      <TemplateItemForm
-                        templateId={template.id}
-                        expenseCategories={expenseCategories}
-                        budgetCategories={budgetCategories}
-                        filterBudgetCategoryId={bc.id}
-                        existingItemCategoryIds={existingCategoryIds}
-                        onItemAdded={() => {}}
+                      <Button
+                        variant="outline"
+                        className="h-11 w-full border-dashed border-[#D1D5DB] text-[#6B7280] hover:bg-[#F3F4F6]"
+                        onClick={() => router.push(`/plantillas/${template.id}/agregar-gasto?categoria=${bc.id}`)}
                       >
-                        <Button
-                          variant="outline"
-                          className="h-11 w-full border-dashed border-[#D1D5DB] text-[#6B7280] hover:bg-[#F3F4F6]"
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Agregar gasto
-                        </Button>
-                      </TemplateItemForm>
+                        <Plus className="h-4 w-4 mr-2" />
+                        Agregar gasto
+                      </Button>
                     </div>
                   ) : (
                     <>
@@ -534,22 +503,14 @@ export function TemplateCard({
 
                       {/* Add Expense Button */}
                       <div className="p-4 border-t border-[#F3F4F6]">
-                        <TemplateItemForm
-                          templateId={template.id}
-                          expenseCategories={expenseCategories}
-                          budgetCategories={budgetCategories}
-                          filterBudgetCategoryId={bc.id}
-                          existingItemCategoryIds={existingCategoryIds}
-                          onItemAdded={() => {}}
+                        <Button
+                          variant="outline"
+                          className="h-11 w-full border-dashed border-[#D1D5DB] text-[#6B7280] hover:bg-[#F3F4F6]"
+                          onClick={() => router.push(`/plantillas/${template.id}/agregar-gasto?categoria=${bc.id}`)}
                         >
-                          <Button
-                            variant="outline"
-                            className="h-11 w-full border-dashed border-[#D1D5DB] text-[#6B7280] hover:bg-[#F3F4F6]"
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Agregar gasto {hasMultipleGroups ? (groups[0]?.subcategoryName ? "fijo" : "variable") : ""}
-                          </Button>
-                        </TemplateItemForm>
+                          <Plus className="h-4 w-4 mr-2" />
+                          Agregar gasto {hasMultipleGroups ? (groups[0]?.subcategoryName ? "fijo" : "variable") : ""}
+                        </Button>
                       </div>
                     </>
                   )}
@@ -560,19 +521,89 @@ export function TemplateCard({
         })}
       </div>
 
+      {/* Delete Button */}
+      <div className="mt-6">
+        <Dialog
+          open={deleteOpen}
+          onOpenChange={(open) => {
+            setDeleteOpen(open);
+            if (!open) {
+              setConfirmDeleteText("");
+            }
+          }}
+        >
+          <DialogTrigger asChild>
+            <Button
+              variant="ghost"
+              className="w-full h-11 text-[#DC2626] hover:text-[#DC2626] hover:bg-[#FEE2E2]"
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Eliminar plantilla
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="rounded-2xl max-w-[90vw] sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-[22px] font-semibold text-[#111111]">
+                Eliminar plantilla
+              </DialogTitle>
+              <DialogDescription className="text-[15px] text-[#6B7280] mt-2">
+                Esta acción no se puede deshacer. Para confirmar, escribe el nombre de la plantilla:
+              </DialogDescription>
+            </DialogHeader>
+            <div className="mt-4 space-y-4">
+              <div className="p-3 bg-[#FEF3C7] border border-[#FCD34D] rounded-xl">
+                <p className="text-[14px] font-medium text-[#92400E]">
+                  &quot;{template.name}&quot;
+                </p>
+              </div>
+              <Input
+                type="text"
+                placeholder="Escribe el nombre de la plantilla"
+                value={confirmDeleteText}
+                onChange={(e) => setConfirmDeleteText(e.target.value)}
+                className="h-12 text-[15px]"
+                autoFocus
+              />
+            </div>
+            <DialogFooter className="gap-2 mt-6">
+              <Button
+                variant="outline"
+                className="h-12 text-base flex-1 rounded-xl"
+                onClick={() => {
+                  setDeleteOpen(false);
+                  setConfirmDeleteText("");
+                }}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                disabled={pending || confirmDeleteText !== template.name}
+                className="h-12 text-base flex-1 rounded-xl bg-[#DC2626] hover:bg-[#DC2626]/90 disabled:opacity-50"
+                onClick={handleDeleteTemplate}
+              >
+                Eliminar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+
       {/* Bottom Fixed Bar */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#F3F4F6] p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] z-50">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div>
-            <p className="text-[13px] text-[#6B7280] mb-0.5">Total</p>
-            <p className="text-[18px] font-bold text-[#111111]">{formatCurrency(totalPlanned)}</p>
+        <div className="max-w-5xl mx-auto">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-[13px] text-[#6B7280] mb-0.5">Total</p>
+              <p className="text-[18px] font-bold text-[#111111]">{formatCurrency(totalPlanned)}</p>
+            </div>
+            <Button
+              className="h-9 bg-[#1C3D2E] hover:bg-[#1C3D2E]/90 text-white rounded-xl px-6"
+              onClick={handleUseTemplate}
+            >
+              Crear presupuesto
+            </Button>
           </div>
-          <Button
-            className="h-9 bg-[#1C3D2E] hover:bg-[#1C3D2E]/90 text-white rounded-xl px-6"
-            onClick={handleUseTemplate}
-          >
-            Usar plantilla
-          </Button>
         </div>
       </div>
     </div>

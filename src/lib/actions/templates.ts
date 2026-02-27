@@ -19,7 +19,7 @@ const templateItemSchema = z.object({
 type SerializedBudgetCategory = Omit<BudgetCategory, "defaultPercentage"> & { defaultPercentage: number };
 type SerializedTemplateItem = Omit<BudgetTemplateItem, "plannedAmount"> & {
   plannedAmount: number;
-  expenseCategory: ExpenseCategory & { 
+  expenseCategory: ExpenseCategory & {
     budgetCategory: SerializedBudgetCategory;
     subcategory: BudgetSubcategory | null;
   };
@@ -64,14 +64,58 @@ export async function getTemplates(): Promise<TemplateWithItems[]> {
         },
         subcategory: item.expenseCategory.subcategory
           ? {
-              id: item.expenseCategory.subcategory.id,
-              categoryId: item.expenseCategory.subcategory.categoryId,
-              name: item.expenseCategory.subcategory.name,
-            }
+            id: item.expenseCategory.subcategory.id,
+            categoryId: item.expenseCategory.subcategory.categoryId,
+            name: item.expenseCategory.subcategory.name,
+          }
           : null,
       },
     })),
   }));
+}
+
+export async function getTemplate(id: string): Promise<TemplateWithItems | null> {
+  const user = await getCurrentUser();
+  const row = await prisma.budgetTemplate.findFirst({
+    where: { id, userId: user.id },
+    include: {
+      items: {
+        include: { expenseCategory: { include: { budgetCategory: true, subcategory: true } } },
+        orderBy: { expenseCategory: { name: "asc" } },
+      },
+    },
+  });
+
+  if (!row) return null;
+
+  return {
+    ...row,
+    items: row.items.map((item) => ({
+      ...item,
+      plannedAmount: Number(item.plannedAmount),
+      expenseCategory: {
+        id: item.expenseCategory.id,
+        userId: item.expenseCategory.userId,
+        name: item.expenseCategory.name,
+        color: item.expenseCategory.color,
+        categoryId: item.expenseCategory.categoryId,
+        subcategoryId: item.expenseCategory.subcategoryId,
+        budgetCategory: {
+          id: item.expenseCategory.budgetCategory.id,
+          name: item.expenseCategory.budgetCategory.name,
+          order: item.expenseCategory.budgetCategory.order,
+          defaultPercentage: Number(item.expenseCategory.budgetCategory.defaultPercentage),
+        },
+        subcategory: item.expenseCategory.subcategory
+          ? {
+            id: item.expenseCategory.subcategory.id,
+            categoryId: item.expenseCategory.subcategory.categoryId,
+            name: item.expenseCategory.subcategory.name,
+          }
+          : null,
+      },
+    })),
+  };
 }
 
 export async function createTemplate(name: string): Promise<ActionResult<BudgetTemplate>> {
@@ -106,6 +150,13 @@ export async function updateTemplate(id: string, name: string): Promise<ActionRe
 export async function deleteTemplate(id: string): Promise<ActionResult> {
   try {
     const user = await getCurrentUser();
+    // First, remove the template reference from all budgets that use it
+    // This ensures budgets are not affected when the template is deleted
+    await prisma.budget.updateMany({
+      where: { createdFromTemplateId: id, userId: user.id },
+      data: { createdFromTemplateId: null },
+    });
+    // Now delete the template
     await prisma.budgetTemplate.delete({ where: { id, userId: user.id } });
     revalidatePath("/plantillas");
     return { success: true, data: undefined };
