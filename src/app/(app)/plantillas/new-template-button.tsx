@@ -37,23 +37,27 @@ export function NewTemplateSheet({ open, onOpenChange }: Props) {
   return (
     <ResponsiveSheet open={open} onOpenChange={onOpenChange} title="Nueva plantilla">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nombre</FormLabel>
-                <FormControl>
-                  <Input placeholder="Ej: Base Mensual..." {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button type="submit" className="w-full h-12 text-base" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? "Creando..." : "Crear"}
-          </Button>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
+          <div className="space-y-4 flex-1">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nombre</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ej: Base Mensual..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="sticky bottom-0 bg-background border-t pt-4 pb-4 -mx-4 px-4 mt-auto">
+            <Button type="submit" className="w-full h-12 text-base" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting ? "Creando..." : "Crear"}
+            </Button>
+          </div>
         </form>
       </Form>
     </ResponsiveSheet>

@@ -63,36 +63,40 @@ export function IncomeForm({ source, children, open: controlledOpen, onOpenChang
       trigger={children}
     >
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nombre</FormLabel>
-                <FormControl>
-                  <Input placeholder="Ej: Salario, Freelance..." {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="amount"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Monto mensual</FormLabel>
-                <FormControl>
-                  <Input type="number" placeholder="0.00" step="0.01" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button type="submit" className="w-full h-12 text-base" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? "Guardando..." : "Guardar"}
-          </Button>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
+          <div className="space-y-4 flex-1">
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Nombre</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ej: Salario, Freelance..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="amount"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Monto mensual</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="0.00" step="0.01" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="sticky bottom-0 bg-background border-t pt-4 pb-4 -mx-4 px-4 mt-auto">
+            <Button type="submit" className="w-full h-12 text-base" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting ? "Guardando..." : "Guardar"}
+            </Button>
+          </div>
         </form>
       </Form>
     </ResponsiveSheet>

@@ -118,62 +118,37 @@ export function CategoryForm({ budgetCategories, expenseCategory, defaultCategor
       trigger={children}
     >
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Nombre</FormLabel>
-                <FormControl>
-                  <Input placeholder="Ej: Supermercado, Renta..." {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="categoryId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Categoría principal</FormLabel>
-                <Select onValueChange={handleCategoryChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona una categoría" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {budgetCategories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {hasSubs && (
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col min-h-full">
+          <div className="space-y-4 pb-4">
             <FormField
               control={form.control}
-              name="subcategoryId"
+              name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>
-                    Subcategoría <span className="text-destructive">*</span>
-                  </FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                  <FormLabel>Nombre</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ej: Supermercado, Renta..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="categoryId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Categoría principal</FormLabel>
+                  <Select onValueChange={handleCategoryChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecciona una subcategoría" />
+                        <SelectValue placeholder="Selecciona una categoría" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      {selectedBudgetCat!.subcategories.map((sub) => (
-                        <SelectItem key={sub.id} value={sub.id}>{sub.name}</SelectItem>
+                      {budgetCategories.map((cat) => (
+                        <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -181,41 +156,69 @@ export function CategoryForm({ budgetCategories, expenseCategory, defaultCategor
                 </FormItem>
               )}
             />
-          )}
 
-          <FormField
-            control={form.control}
-            name="color"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Color</FormLabel>
-                <FormControl>
-                  <div className="flex gap-2.5 overflow-x-auto px-2 py-5 scrollbar-none">
-                    {EXPENSE_COLORS.map((color) => (
-                      <button
-                        key={color.value}
-                        type="button"
-                        title={color.name}
-                        onClick={() => field.onChange(color.value)}
-                        className={cn(
-                          "h-8 w-8 shrink-0 rounded-full border-2 transition-transform hover:scale-110",
-                          field.value === color.value
-                            ? "border-foreground scale-110 ring-2 ring-offset-2 ring-foreground/30"
-                            : "border-transparent"
-                        )}
-                        style={{ backgroundColor: color.value }}
-                      />
-                    ))}
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+            {hasSubs && (
+              <FormField
+                control={form.control}
+                name="subcategoryId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      Subcategoría <span className="text-destructive">*</span>
+                    </FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value ?? ""}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona una subcategoría" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {selectedBudgetCat!.subcategories.map((sub) => (
+                          <SelectItem key={sub.id} value={sub.id}>{sub.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
-          />
 
-          <Button type="submit" className="w-full h-12 text-base mt-6 bg-primary hover:bg-primary/90" disabled={form.formState.isSubmitting}>
-            {form.formState.isSubmitting ? "Guardando..." : "Guardar"}
-          </Button>
+            <FormField
+              control={form.control}
+              name="color"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Color</FormLabel>
+                  <FormControl>
+                    <div className="flex gap-2.5 overflow-x-auto px-2 py-5 scrollbar-none">
+                      {EXPENSE_COLORS.map((color) => (
+                        <button
+                          key={color.value}
+                          type="button"
+                          title={color.name}
+                          onClick={() => field.onChange(color.value)}
+                          className={cn(
+                            "h-8 w-8 shrink-0 rounded-full border-2 transition-transform hover:scale-110",
+                            field.value === color.value
+                              ? "border-foreground scale-110 ring-2 ring-offset-2 ring-foreground/30"
+                              : "border-transparent"
+                          )}
+                          style={{ backgroundColor: color.value }}
+                        />
+                      ))}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="sticky bottom-0 bg-background border-t pt-4 pb-4 -mx-4 px-4 mt-auto">
+            <Button type="submit" className="w-full h-12 text-base bg-primary hover:bg-primary/90" disabled={form.formState.isSubmitting}>
+              {form.formState.isSubmitting ? "Guardando..." : "Guardar"}
+            </Button>
+          </div>
         </form>
       </Form>
     </ResponsiveSheet>

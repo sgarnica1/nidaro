@@ -214,7 +214,7 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
             />
 
           </div>
-          <div className="flex flex-col gap-3 pt-4 mt-auto border-t">
+          <div className="sticky bottom-0 bg-background border-t pt-4 pb-4 -mx-4 px-4 mt-auto flex flex-col gap-3">
             <Button type="submit" className="w-full h-12 text-base bg-primary hover:bg-primary/90" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? "Guardando..." : "Guardar"}
             </Button>

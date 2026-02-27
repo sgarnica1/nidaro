@@ -25,7 +25,7 @@ export function ResponsiveSheet({ open, onOpenChange, title, trigger, children }
   const contentClassName = useMemo(
     () =>
       isMobile
-        ? "max-h-[85dvh] rounded-t-2xl border-t px-4 pt-6 pb-16 safe-area-inset-bottom overflow-y-auto"
+        ? "h-[90vh] rounded-t-2xl border-t p-0 flex flex-col"
         : "overflow-y-auto w-[400px] sm:w-[440px] px-6 rounded-l-2xl shadow-lg",
     [isMobile]
   );
@@ -60,10 +60,23 @@ export function ResponsiveSheet({ open, onOpenChange, title, trigger, children }
           // The Sheet will close on the next escape press if combobox is already closed
         }}
       >
-        <SheetHeader className="mb-4 p-0">
-          <SheetTitle>{title}</SheetTitle>
-        </SheetHeader>
-        {children}
+        {isMobile ? (
+          <>
+            <SheetHeader className="px-4 pt-6 pb-4 shrink-0 border-b">
+              <SheetTitle>{title}</SheetTitle>
+            </SheetHeader>
+            <div className="flex-1 overflow-y-auto px-4 py-4">
+              {children}
+            </div>
+          </>
+        ) : (
+          <>
+            <SheetHeader className="mb-4 p-0">
+              <SheetTitle>{title}</SheetTitle>
+            </SheetHeader>
+            {children}
+          </>
+        )}
       </SheetContent>
     </Sheet>
   );

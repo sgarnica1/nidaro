@@ -41,7 +41,7 @@ export function NewGroupButton() {
 
       <Button
         size="icon"
-        className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg md:hidden z-[60] bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-200"
+        className="fixed bottom-24 right-4 h-14 w-14 rounded-full shadow-lg md:hidden z-[60] bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-200"
         onClick={() => setOpen(true)}
       >
         <Plus className="h-6 w-6" />
@@ -49,23 +49,27 @@ export function NewGroupButton() {
 
       <ResponsiveSheet open={open} onOpenChange={setOpen} title="Crear grupo familiar">
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Nombre del grupo</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ej: Familia García..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? "Creando..." : "Crear"}
-            </Button>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
+            <div className="space-y-4 flex-1">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Nombre del grupo</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ej: Familia García..." {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="sticky bottom-0 bg-background border-t pt-4 pb-4 -mx-4 px-4 mt-auto">
+              <Button type="submit" className="w-full h-12 text-base" disabled={form.formState.isSubmitting}>
+                {form.formState.isSubmitting ? "Creando..." : "Crear"}
+              </Button>
+            </div>
           </form>
         </Form>
       </ResponsiveSheet>
