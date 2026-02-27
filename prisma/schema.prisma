@@ -24,12 +24,12 @@ model User {
   email     String   @unique
   createdAt DateTime @default(now())
 
-  incomeSources      IncomeSource[]
-  expenseCategories  ExpenseCategory[]
-  budgets            Budget[]
-  budgetTemplates    BudgetTemplate[]
-  familyMemberships  FamilyMember[]
-  ownedFamilyGroups  FamilyGroup[]     @relation("FamilyOwner")
+  incomeSources       IncomeSource[]
+  expenseCategories   ExpenseCategory[]
+  budgets             Budget[]
+  budgetTemplates     BudgetTemplate[]
+  familyMemberships   FamilyMember[]
+  ownedFamilyGroups   FamilyGroup[]            @relation("FamilyOwner")
   categoryPercentages UserCategoryPercentage[]
 }
 
@@ -64,7 +64,7 @@ model IncomeSource {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
 
-  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   budgetIncomes BudgetIncome[]
 }
 
@@ -85,9 +85,9 @@ model BudgetCategory {
   defaultPercentage Decimal @db.Decimal(5, 2)
   order             Int
 
-  subcategories       BudgetSubcategory[]
-  expenseCategories   ExpenseCategory[]
-  userPercentages     UserCategoryPercentage[]
+  subcategories     BudgetSubcategory[]
+  expenseCategories ExpenseCategory[]
+  userPercentages   UserCategoryPercentage[]
 }
 
 model BudgetSubcategory {
@@ -119,12 +119,12 @@ model ExpenseCategory {
   categoryId    String
   subcategoryId String?
 
-  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  budgetCategory   BudgetCategory     @relation(fields: [categoryId], references: [id])
-  subcategory      BudgetSubcategory? @relation(fields: [subcategoryId], references: [id])
-  templateItems    BudgetTemplateItem[]
-  budgetPlans      BudgetExpensePlan[]
-  expenses         Expense[]
+  user           User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  budgetCategory BudgetCategory       @relation(fields: [categoryId], references: [id])
+  subcategory    BudgetSubcategory?   @relation(fields: [subcategoryId], references: [id])
+  templateItems  BudgetTemplateItem[]
+  budgetPlans    BudgetExpensePlan[]
+  expenses       Expense[]
 }
 
 model BudgetTemplate {
@@ -148,24 +148,24 @@ model BudgetTemplateItem {
 }
 
 model Budget {
-  id                   String   @id @default(cuid())
-  userId               String
-  familyGroupId        String?
-  name                 String?
-  startDate            DateTime
-  endDate              DateTime
-  totalIncome          Decimal  @db.Decimal(12, 2) @default(0)
-  totalPlanned         Decimal  @db.Decimal(12, 2) @default(0)
+  id                    String   @id @default(cuid())
+  userId                String
+  familyGroupId         String?
+  name                  String?
+  startDate             DateTime
+  endDate               DateTime
+  totalIncome           Decimal  @default(0) @db.Decimal(12, 2)
+  totalPlanned          Decimal  @default(0) @db.Decimal(12, 2)
   createdFromTemplateId String?
-  createdAt            DateTime @default(now())
+  createdAt             DateTime @default(now())
 
-  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
-  familyGroup       FamilyGroup?        @relation(fields: [familyGroupId], references: [id])
-  createdFromTemplate BudgetTemplate?   @relation(fields: [createdFromTemplateId], references: [id])
-  incomes           BudgetIncome[]
-  deductions        IncomeDeduction[]
-  expensePlans      BudgetExpensePlan[]
-  expenses          Expense[]
+  user                User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  familyGroup         FamilyGroup?        @relation(fields: [familyGroupId], references: [id])
+  createdFromTemplate BudgetTemplate?     @relation(fields: [createdFromTemplateId], references: [id], onDelete: SetNull)
+  incomes             BudgetIncome[]
+  deductions          IncomeDeduction[]
+  expensePlans        BudgetExpensePlan[]
+  expenses            Expense[]
 }
 
 model BudgetIncome {

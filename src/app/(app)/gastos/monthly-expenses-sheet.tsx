@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
-import { X, ChevronDown, ChevronUp, Plus, AlertCircle } from "lucide-react";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { ChevronDown, ChevronUp, Plus, AlertCircle } from "lucide-react";
+import { ResponsiveSheet } from "@/components/ui/responsive-sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ExpenseForm } from "./expense-form";
@@ -40,14 +40,6 @@ function getCategoryIcon(category: ExpenseCategoryWithRelations) {
     Educación: "📚",
   };
   return IconMap[category.name] || "💰";
-}
-
-function darkenHex(hex: string, factor = 0.7): string {
-  const clean = hex.replace("#", "");
-  const r = Math.round(parseInt(clean.slice(0, 2), 16) * factor);
-  const g = Math.round(parseInt(clean.slice(2, 4), 16) * factor);
-  const b = Math.round(parseInt(clean.slice(4, 6), 16) * factor);
-  return `rgb(${r}, ${g}, ${b})`;
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
@@ -138,211 +130,205 @@ export function MonthlyExpensesSheet({
     if (open && hasData && expandedSections.size === 0) {
       const firstWithData = categoryData.find((cat) => cat.expenses.length > 0);
       if (firstWithData) {
-        setExpandedSections(new Set([firstWithData.id]));
+        // Use setTimeout to avoid synchronous setState in effect
+        setTimeout(() => {
+          setExpandedSections(new Set([firstWithData.id]));
+        }, 0);
       }
     }
   }, [open, hasData, categoryData, expandedSections.size]);
 
   return (
-    <>
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent
-          side="bottom"
-          className="h-[90vh] rounded-t-[24px] p-0 flex flex-col bg-[#F8F8F6]"
-        >
-          <div className="flex-1 overflow-y-auto">
-            <div className="sticky top-0 bg-[#F8F8F6] z-10 pb-4 pt-6 px-5 border-b border-[#E5E7EB] rounded-t-[24px]">
-              <div className="w-8 h-1 bg-[#D1D5DB] rounded-full mx-auto mb-4" />
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <SheetHeader className="mb-3 p-0">
-                    <SheetTitle className="text-[18px] font-bold text-[#111111]">Gastos Mensuales</SheetTitle>
-                  </SheetHeader>
-                  <div className="flex gap-2 mb-3">
-                    <Badge className="bg-white text-[#111111] border border-[#E5E7EB] px-3 py-1 text-[13px] font-medium">
-                      {formatCurrency(totalExpenses)} total
-                    </Badge>
-                    <Badge
-                      className={cn(
-                        "px-3 py-1 text-[13px] font-medium border-0",
-                        expensePercentage > 50
-                          ? "bg-[#FEF3C7] text-[#92400E]"
-                          : expensePercentage > 40
-                            ? "bg-[#FDE68A] text-[#78350F]"
-                            : "bg-[#D1FAE5] text-[#065F46]"
-                      )}
-                    >
-                      {expensePercentage.toFixed(1)}% del ingreso
-                    </Badge>
-                  </div>
-                  <div className="h-1.5 bg-[#E5E7EB] rounded-full overflow-hidden">
-                    <div className="h-full flex">
-                      {categoryData.map((cat, index) => {
-                        const pct = categoryPercentages[cat.id] ?? 0;
-                        return (
-                          <div
-                            key={cat.id}
-                            className="h-full"
-                            style={{
-                              width: `${pct}%`,
-                              backgroundColor: cat.color,
-                            }}
-                          />
-                        );
-                      })}
-                    </div>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 shrink-0 text-[#6B7280] hover:text-[#111111]"
-                  onClick={() => onOpenChange(false)}
-                >
-                  <X className="h-5 w-5" />
-                </Button>
-              </div>
-            </div>
-
-            <div className="px-5 pt-6 pb-24">
-              {categoryData.map((category) => {
-                const isExpanded = expandedSections.has(category.id);
-                const sectionPct = category.total > 0 ? (category.total / totalExpenses) * 100 : 0;
-                const topExpense = category.expenses[0];
-
+    <ResponsiveSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Gastos Mensuales"
+      showDragHandle={true}
+    >
+      <div className="flex flex-col h-full">
+        {/* Header Stats */}
+        <div className="px-4 pb-4 border-b border-[#F3F4F6]">
+          <div className="flex gap-2 mb-3">
+            <Badge className="bg-[#F3F4F6] text-[#111111] border-0 px-3 py-1.5 text-[13px] font-medium">
+              {formatCurrency(totalExpenses)} total
+            </Badge>
+            <Badge
+              className={cn(
+                "px-3 py-1.5 text-[13px] font-medium border-0",
+                expensePercentage > 50
+                  ? "bg-[#FEF3C7] text-[#92400E]"
+                  : expensePercentage > 40
+                    ? "bg-[#FDE68A] text-[#78350F]"
+                    : "bg-[#D1FAE5] text-[#065F46]"
+              )}
+            >
+              {expensePercentage.toFixed(1)}% del ingreso
+            </Badge>
+          </div>
+          <div className="h-1.5 bg-[#E5E7EB] rounded-full overflow-hidden">
+            <div className="h-full flex">
+              {categoryData.map((cat) => {
+                const pct = categoryPercentages[cat.id] ?? 0;
                 return (
-                  <div key={category.id} className="mb-4">
-                    <button
-                      type="button"
-                      onClick={() => toggleSection(category.id)}
-                      className="w-full flex items-center justify-between h-14 px-4 bg-[#F8F8F6] rounded-xl mb-2 transition-colors hover:bg-[#F3F4F6]"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="text-[11px] font-semibold text-[#6B7280] uppercase tracking-[0.8px]">
-                          {category.name}
-                        </span>
-                        <Badge className="bg-white text-[#6B7280] border border-[#E5E7EB] text-[11px] px-2 py-0.5">
-                          {category.expenses.length}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-[15px] font-semibold text-[#111111]">
-                          {formatCurrency(category.total)}
-                        </span>
-                        {isExpanded ? (
-                          <ChevronUp className="h-5 w-5 text-[#6B7280]" />
-                        ) : (
-                          <ChevronDown className="h-5 w-5 text-[#6B7280]" />
-                        )}
-                      </div>
-                    </button>
-
-                    {isExpanded && (
-                      <div className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.04)] overflow-hidden">
-                        {category.expenses.length === 0 ? (
-                          <div className="py-12 text-center">
-                            <p className="text-[15px] text-[#6B7280] mb-1">Sin gastos</p>
-                            <p className="text-[13px] text-[#6B7280]">Toca + para agregar</p>
-                          </div>
-                        ) : (
-                          category.expenses.map((expense, index) => {
-                            const expCategory = expenseCategories.find(
-                              (c) => c.id === expense.expenseCategoryId
-                            );
-                            if (!expCategory) return null;
-
-                            const itemPct =
-                              category.total > 0 ? (expense.amount / category.total) * 100 : 0;
-                            const isLargeExpense = (expense.amount / totalExpenses) * 100 > 30;
-
-                            return (
-                              <div
-                                key={expense.id}
-                                className={cn(
-                                  "flex items-center gap-4 h-16 px-5",
-                                  index % 2 === 0 ? "bg-white" : "bg-[#FAFAFA]"
-                                )}
-                              >
-                                <div
-                                  className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0 text-lg"
-                                  style={{
-                                    backgroundColor: `${expCategory.color}1F`,
-                                  }}
-                                >
-                                  {getCategoryIcon(expCategory)}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-[15px] font-medium text-[#111111] truncate">
-                                    {expense.name}
-                                  </p>
-                                </div>
-                                <div className="flex items-center gap-2 shrink-0">
-                                  {isLargeExpense && (
-                                    <AlertCircle className="h-4 w-4 text-[#F59E0B]" />
-                                  )}
-                                  <div className="text-right">
-                                    <p className="text-[15px] font-bold text-[#111111] tabular-nums">
-                                      {formatCurrency(expense.amount)}
-                                    </p>
-                                    <p className="text-[12px] text-[#6B7280]">
-                                      {itemPct.toFixed(1)}%
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })
-                        )}
-                      </div>
-                    )}
-
-                    {!isExpanded && topExpense && (() => {
-                      const topExpCategory = expenseCategories.find((c) => c.id === topExpense.expenseCategoryId);
-                      if (!topExpCategory) return null;
-                      return (
-                        <div className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.04)] px-5 py-3">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className="h-8 w-8 rounded-lg flex items-center justify-center shrink-0 text-base"
-                              style={{
-                                backgroundColor: `${topExpCategory.color}1F`,
-                              }}
-                            >
-                              {getCategoryIcon(topExpCategory)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-[13px] text-[#6B7280] truncate">
-                                {topExpense.name}
-                              </p>
-                            </div>
-                            <p className="text-[13px] font-semibold text-[#111111] tabular-nums">
-                              {formatCurrency(topExpense.amount)}
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
+                  <div
+                    key={cat.id}
+                    className="h-full"
+                    style={{
+                      width: `${pct}%`,
+                      backgroundColor: cat.color,
+                    }}
+                  />
                 );
               })}
             </div>
           </div>
+        </div>
 
-          <div className="sticky bottom-0 bg-white border-t border-[#E5E7EB] p-5">
-            <ExpenseForm
-              budgetId={budgetId}
-              expenseCategories={expenseCategories}
-              open={isFormOpen}
-              onOpenChange={setIsFormOpen}
-            >
-              <Button className="w-full h-12 text-base rounded-2xl bg-[#1C3D2E] hover:bg-[#1C3D2E]/90 text-white">
-                <Plus className="h-5 w-5 mr-2" />
-                Agregar gasto
-              </Button>
-            </ExpenseForm>
-          </div>
-        </SheetContent>
-      </Sheet>
+        {/* Expenses List */}
+        <div className="flex-1 overflow-y-auto px-4 pt-4 pb-24">
+          {categoryData.map((category) => {
+            const isExpanded = expandedSections.has(category.id);
+            const topExpense = category.expenses[0];
+
+            return (
+              <div key={category.id} className="mb-4">
+                <button
+                  type="button"
+                  onClick={() => toggleSection(category.id)}
+                  className="w-full flex items-center justify-between h-12 px-4 bg-white rounded-xl mb-2 border border-[#F3F4F6] transition-colors active:bg-[#F8F8F6]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="h-2 w-2 rounded-sm shrink-0"
+                      style={{ backgroundColor: category.color }}
+                    />
+                    <span className="text-[11px] font-bold text-[#111111] uppercase tracking-wider">
+                      {category.name}
+                    </span>
+                    <Badge className="bg-[#F3F4F6] text-[#6B7280] border-0 text-[11px] px-2 py-0.5 font-medium">
+                      {category.expenses.length}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="text-[15px] font-bold text-[#111111]">
+                      {formatCurrency(category.total)}
+                    </span>
+                    {isExpanded ? (
+                      <ChevronUp className="h-5 w-5 text-[#6B7280]" />
+                    ) : (
+                      <ChevronDown className="h-5 w-5 text-[#6B7280]" />
+                    )}
+                  </div>
+                </button>
+
+                {isExpanded && (
+                  <div className="bg-white rounded-2xl border border-[#F3F4F6] overflow-hidden mb-2">
+                    {category.expenses.length === 0 ? (
+                      <div className="py-12 px-4 text-center">
+                        <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#F3F4F6] mb-3">
+                          <AlertCircle className="h-6 w-6 text-[#6B7280]" />
+                        </div>
+                        <p className="text-[15px] text-[#111111] font-medium mb-1">Sin gastos</p>
+                        <p className="text-[13px] text-[#6B7280]">Toca el botón + para agregar</p>
+                      </div>
+                    ) : (
+                      category.expenses.map((expense, index) => {
+                        const expCategory = expenseCategories.find(
+                          (c) => c.id === expense.expenseCategoryId
+                        );
+                        if (!expCategory) return null;
+
+                        const itemPct =
+                          category.total > 0 ? (expense.amount / category.total) * 100 : 0;
+                        const isLargeExpense = (expense.amount / totalExpenses) * 100 > 30;
+
+                        return (
+                          <div
+                            key={expense.id}
+                            className={cn(
+                              "flex items-center gap-4 h-14 px-4 border-b border-[#F3F4F6] last:border-b-0",
+                              index % 2 === 0 ? "bg-white" : "bg-[#FAFAFA]"
+                            )}
+                          >
+                            <div
+                              className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 text-lg"
+                              style={{
+                                backgroundColor: `${expCategory.color}20`,
+                              }}
+                            >
+                              {getCategoryIcon(expCategory)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[15px] font-medium text-[#111111] truncate">
+                                {expense.name}
+                              </p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {isLargeExpense && (
+                                <AlertCircle className="h-4 w-4 text-[#F59E0B]" />
+                              )}
+                              <div className="text-right">
+                                <p className="text-[15px] font-bold text-[#111111] tabular-nums">
+                                  {formatCurrency(expense.amount)}
+                                </p>
+                                <p className="text-[11px] text-[#6B7280] font-medium">
+                                  {itemPct.toFixed(1)}%
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
+
+                {!isExpanded && topExpense && (() => {
+                  const topExpCategory = expenseCategories.find((c) => c.id === topExpense.expenseCategoryId);
+                  if (!topExpCategory) return null;
+                  return (
+                    <div className="bg-white rounded-xl border border-[#F3F4F6] px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="h-9 w-9 rounded-xl flex items-center justify-center shrink-0 text-base"
+                          style={{
+                            backgroundColor: `${topExpCategory.color}20`,
+                          }}
+                        >
+                          {getCategoryIcon(topExpCategory)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[13px] text-[#111111] font-medium truncate">
+                            {topExpense.name}
+                          </p>
+                        </div>
+                        <p className="text-[13px] font-bold text-[#111111] tabular-nums">
+                          {formatCurrency(topExpense.amount)}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Bottom Action Bar */}
+        <div className="sticky bottom-0 bg-white border-t border-[#F3F4F6] px-4 pt-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
+          <ExpenseForm
+            budgetId={budgetId}
+            expenseCategories={expenseCategories}
+            open={isFormOpen}
+            onOpenChange={setIsFormOpen}
+          >
+            <Button className="w-full h-[52px] text-base font-bold rounded-[14px] bg-[#1C3D2E] hover:bg-[#1C3D2E]/90 text-white active:scale-[0.98] transition-transform">
+              <Plus className="h-5 w-5 mr-2" />
+              Agregar gasto
+            </Button>
+          </ExpenseForm>
+        </div>
+      </div>
 
       {isFormOpen && (
         <ExpenseForm
@@ -354,6 +340,6 @@ export function MonthlyExpensesSheet({
           <span className="sr-only" />
         </ExpenseForm>
       )}
-    </>
+    </ResponsiveSheet>
   );
 }

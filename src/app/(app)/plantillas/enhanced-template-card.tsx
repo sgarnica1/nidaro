@@ -109,7 +109,7 @@ export function EnhancedTemplateCard({ template, totalIncome, onClick, onUse, la
               onUse();
             }}
           >
-            Usar plantilla
+            Agregar gastos
           </Button>
         </div>
       </CardContent>
