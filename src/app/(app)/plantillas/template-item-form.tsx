@@ -129,8 +129,6 @@ export function TemplateItemForm({
     if (result.success) {
       onItemAdded?.();
       handleOpenChange(false);
-    } else {
-      toast.error(result.error);
     }
   }
 

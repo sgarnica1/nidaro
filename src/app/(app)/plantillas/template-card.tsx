@@ -83,8 +83,6 @@ export function TemplateCard({
       });
       if (result.success) {
         handleCancelEdit();
-      } else {
-        toast.error(result.error);
       }
     });
   }
