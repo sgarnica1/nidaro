@@ -1,14 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus, BookTemplate } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import type { TemplateWithItems } from "@/lib/actions/templates";
 import type { ExpenseCategoryWithRelations, BudgetCategoryWithSubs } from "@/lib/actions/expense-categories";
 import { TemplateCompactCard } from "./template-compact-card";
 import { TemplateDetailSheet } from "./template-detail-sheet";
 import { NewTemplateSheet } from "./new-template-button";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type Props = {
   templates: TemplateWithItems[];
@@ -36,26 +37,42 @@ export function TemplatesClient({ templates, expenseCategories, budgetCategories
       </div>
 
       {templates.length === 0 ? (
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <p className="text-muted-foreground">No tienes plantillas aún.</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Crea una plantilla para reutilizarla en tus presupuestos mensuales.
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={BookTemplate}
+          title="Crea tu primera plantilla"
+          description="Guarda estructuras de presupuesto reutilizables para ahorrar tiempo al crear nuevos presupuestos mensuales."
+          action={{
+            label: "Crear plantilla",
+            onClick: () => setNewTemplateOpen(true),
+          }}
+        />
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {templates.map((template) => (
-              <TemplateCompactCard
-                key={template.id}
-                template={template}
-                totalIncome={totalIncome}
-                onClick={() => setSelectedTemplateId(template.id)}
-              />
-            ))}
-          </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key="templates"
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.25, ease: "easeOut" }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+            >
+              {templates.map((template, index) => (
+                <motion.div
+                  key={template.id}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.2, delay: index * 0.03, ease: "easeOut" }}
+                >
+                  <TemplateCompactCard
+                    template={template}
+                    totalIncome={totalIncome}
+                    onClick={() => setSelectedTemplateId(template.id)}
+                  />
+                </motion.div>
+              ))}
+            </motion.div>
+          </AnimatePresence>
 
           <TemplateDetailSheet
             template={selectedTemplate}

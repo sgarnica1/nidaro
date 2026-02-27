@@ -218,11 +218,11 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
             />
 
           </div>
-          <div className="flex flex-col gap-2 pt-4 mt-auto border-t">
-            <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={form.formState.isSubmitting}>
+          <div className="flex flex-col gap-3 pt-4 mt-auto border-t">
+            <Button type="submit" className="w-full h-12 text-base bg-primary hover:bg-primary/90" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? "Guardando..." : "Guardar"}
             </Button>
-            <Button type="button" variant="outline" className="w-full" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" className="w-full h-12 text-base" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
           </div>

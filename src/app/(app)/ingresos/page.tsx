@@ -3,8 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { getIncomeSources } from "@/lib/actions/income";
 import { IncomeForm } from "./income-form";
-import { IncomeList } from "./income-list";
 import { IncomeFAB } from "./income-fab";
+import { IngresosClient } from "./ingresos-client";
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(amount);
@@ -38,7 +38,7 @@ export default async function IngresosPage() {
         </CardContent>
       </Card>
 
-      <IncomeList sources={sources} />
+      <IngresosClient sources={sources} totalActive={totalActive} />
       <IncomeFAB />
     </div>
   );

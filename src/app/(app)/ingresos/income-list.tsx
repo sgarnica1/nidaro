@@ -2,11 +2,12 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { MoreVertical, Pencil, Trash2, Wallet } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,13 +35,14 @@ import { useIsMobile } from "@/hooks/use-is-mobile";
 
 type Props = {
   sources: SerializedIncomeSource[];
+  onAddIncome?: () => void;
 };
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(amount);
 }
 
-export function IncomeList({ sources }: Props) {
+export function IncomeList({ sources, onAddIncome }: Props) {
   const isMobile = useIsMobile();
   const [pending, startTransition] = useTransition();
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -80,14 +82,19 @@ export function IncomeList({ sources }: Props) {
 
   if (sources.length === 0) {
     return (
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-          <p className="text-muted-foreground">No tienes fuentes de ingreso aún.</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Agrega tu primer ingreso para comenzar.
-          </p>
-        </CardContent>
-      </Card>
+      <EmptyState
+        icon={Wallet}
+        title="Agrega tu primera fuente de ingreso"
+        description="Registra tus ingresos para tener una visión completa de tus finanzas y crear presupuestos más precisos."
+        action={
+          onAddIncome
+            ? {
+                label: "Agregar ingreso",
+                onClick: onAddIncome,
+              }
+            : undefined
+        }
+      />
     );
   }
 
@@ -162,17 +169,17 @@ export function IncomeList({ sources }: Props) {
           <SheetHeader className="mb-4">
             <SheetTitle className="text-base">{mobileActionSource?.name}</SheetTitle>
           </SheetHeader>
-          <div className="space-y-1">
-            <Button variant="ghost" className="w-full justify-start gap-3" onClick={handleMobileEdit}>
-              <Pencil className="h-4 w-4" />
+          <div className="space-y-2">
+            <Button variant="ghost" className="w-full justify-start gap-3 h-12 text-base" onClick={handleMobileEdit}>
+              <Pencil className="h-5 w-5" />
               Editar
             </Button>
             <Button
               variant="ghost"
-              className="w-full justify-start gap-3 text-destructive hover:text-destructive"
+              className="w-full justify-start gap-3 h-12 text-base text-destructive hover:text-destructive"
               onClick={handleMobileDelete}
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-5 w-5" />
               Eliminar
             </Button>
           </div>
@@ -187,11 +194,12 @@ export function IncomeList({ sources }: Props) {
               Esta acción no se puede deshacer.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeletingId(null)}>Cancelar</Button>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" className="h-12 text-base flex-1" onClick={() => setDeletingId(null)}>Cancelar</Button>
             <Button
               variant="destructive"
               disabled={pending}
+              className="h-12 text-base flex-1"
               onClick={() => deletingId && handleDelete(deletingId)}
             >
               Eliminar

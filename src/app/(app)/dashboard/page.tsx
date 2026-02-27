@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { getActiveBudget, getBudgets, getBudgetById } from "@/lib/actions/budgets";
 import { getExpensesByBudget } from "@/lib/actions/expenses";
@@ -75,16 +76,15 @@ export default async function DashboardPage({
           <h1 className="text-2xl font-semibold">Dashboard</h1>
           <p className="text-sm text-muted-foreground">Tu centro de control financiero</p>
         </div>
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center gap-4">
-            <p className="text-muted-foreground text-lg">Presupuesto no encontrado</p>
-            <Button asChild>
-              <Link href="/dashboard">
-                Ver presupuesto activo
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Receipt}
+          title="Presupuesto no encontrado"
+          description="El presupuesto que buscas no está disponible. Regresa al dashboard para ver tu presupuesto activo."
+          action={{
+            label: "Ver presupuesto activo",
+            href: "/dashboard",
+          }}
+        />
       </div>
     );
   }
@@ -98,20 +98,15 @@ export default async function DashboardPage({
           <h1 className="text-2xl font-semibold">Dashboard</h1>
           <p className="text-sm text-muted-foreground">Tu centro de control financiero</p>
         </div>
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center gap-4">
-            <p className="text-muted-foreground text-lg">No tienes un presupuesto activo</p>
-            <p className="text-sm text-muted-foreground">
-              Crea un presupuesto para empezar a controlar tus gastos.
-            </p>
-            <Button asChild>
-              <Link href="/presupuestos/nuevo">
-                <Plus className="h-4 w-4 mr-2" />
-                Crear presupuesto
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Receipt}
+          title="Empieza tu primer presupuesto"
+          description="Organiza tus gastos y toma el control de tu dinero este mes."
+          action={{
+            label: "Crear mi presupuesto",
+            href: "/presupuestos/nuevo",
+          }}
+        />
       </div>
     );
   }

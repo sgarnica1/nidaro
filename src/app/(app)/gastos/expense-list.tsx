@@ -3,12 +3,13 @@
 import { useState, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast } from "sonner";
-import { MoreVertical, Pencil, Trash2, Receipt, Plus } from "lucide-react";
+import { MoreVertical, Pencil, Trash2, Receipt } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -120,23 +121,19 @@ export function ExpenseList({ expenses, expenseCategories, budgetId, onAddExpens
 
   if (expenses.length === 0) {
     return (
-      <Card className="rounded-2xl border border-border/40 shadow-sm bg-background">
-        <CardContent className="flex flex-col items-center justify-center py-16 text-center gap-4">
-          <Receipt className="h-12 w-12 text-muted-foreground" />
-          <div>
-            <p className="font-medium">No hay gastos este mes</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              Agrega tu primer gasto para comenzar a rastrear tus finanzas.
-            </p>
-          </div>
-          {onAddExpense && (
-            <Button onClick={onAddExpense} className="bg-primary hover:bg-primary/90 mt-2">
-              <Plus className="h-4 w-4 mr-2" />
-              Agregar gasto
-            </Button>
-          )}
-        </CardContent>
-      </Card>
+      <EmptyState
+        icon={Receipt}
+        title="No hay gastos este mes"
+        description="Agrega tu primer gasto para comenzar a rastrear tus finanzas y mantener el control de tu dinero."
+        action={
+          onAddExpense
+            ? {
+              label: "Agregar mi primer gasto",
+              onClick: onAddExpense,
+            }
+            : undefined
+        }
+      />
     );
   }
 
@@ -268,17 +265,17 @@ export function ExpenseList({ expenses, expenseCategories, budgetId, onAddExpens
           <SheetHeader className="mb-4">
             <SheetTitle className="text-base">{mobileActionExpense?.name}</SheetTitle>
           </SheetHeader>
-          <div className="space-y-1">
-            <Button variant="ghost" className="w-full justify-start gap-3" onClick={handleMobileEdit}>
-              <Pencil className="h-4 w-4" />
+          <div className="space-y-2">
+            <Button variant="ghost" className="w-full justify-start gap-3 h-12 text-base" onClick={handleMobileEdit}>
+              <Pencil className="h-5 w-5" />
               Editar
             </Button>
             <Button
               variant="ghost"
-              className="w-full justify-start gap-3 text-destructive hover:text-destructive"
+              className="w-full justify-start gap-3 h-12 text-base text-destructive hover:text-destructive"
               onClick={handleMobileDelete}
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-5 w-5" />
               Eliminar
             </Button>
           </div>
@@ -291,11 +288,12 @@ export function ExpenseList({ expenses, expenseCategories, budgetId, onAddExpens
             <DialogTitle>Eliminar gasto</DialogTitle>
             <DialogDescription>Esta acción no se puede deshacer.</DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeletingId(null)}>Cancelar</Button>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" className="h-12 text-base flex-1" onClick={() => setDeletingId(null)}>Cancelar</Button>
             <Button
               variant="destructive"
               disabled={pending}
+              className="h-12 text-base flex-1"
               onClick={() => deletingId && handleDelete(deletingId)}
             >
               Eliminar
