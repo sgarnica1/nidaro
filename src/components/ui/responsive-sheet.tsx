@@ -26,7 +26,7 @@ export function ResponsiveSheet({ open, onOpenChange, title, trigger, children }
     () =>
       isMobile
         ? "h-[90vh] rounded-t-2xl border-t p-0 flex flex-col"
-        : "overflow-y-auto w-[400px] sm:w-[440px] px-6 rounded-l-2xl shadow-lg",
+        : "overflow-y-auto w-[400px] sm:w-[440px] px-6 shadow-lg pt-6",
     [isMobile]
   );
 
