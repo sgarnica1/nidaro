@@ -3,10 +3,11 @@ import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { getActiveBudget } from "@/lib/actions/budgets";
+import { getActiveBudget, getBudgets, getBudgetById } from "@/lib/actions/budgets";
 import { getExpensesByBudget } from "@/lib/actions/expenses";
 import { getCategoriesWithPercentages } from "@/lib/actions/budget-structure";
 import { BudgetTable } from "./budget-table";
+import { BudgetFilter } from "./budget-filter";
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(amount);
@@ -16,11 +17,75 @@ function formatDate(date: Date) {
   return new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short", year: "numeric" }).format(date);
 }
 
-export default async function DashboardPage() {
-  const [budget, categories] = await Promise.all([
-    getActiveBudget(),
+function budgetLabel(b: { name: string | null; startDate: Date }): string {
+  if (b.name) return b.name;
+  const raw = new Intl.DateTimeFormat("es-MX", { month: "long", year: "numeric" }).format(new Date(b.startDate));
+  return raw.charAt(0).toUpperCase() + raw.slice(1);
+}
+
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ budgetId?: string }>;
+}) {
+  const { budgetId: selectedId } = await searchParams;
+
+  const [allBudgets, categories] = await Promise.all([
+    getBudgets(),
     getCategoriesWithPercentages(),
   ]);
+
+  if (allBudgets.length === 0) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">Tu centro de control financiero</p>
+        </div>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16 text-center gap-4">
+            <p className="text-muted-foreground text-lg">No tienes un presupuesto activo</p>
+            <p className="text-sm text-muted-foreground">
+              Crea un presupuesto para empezar a controlar tus gastos.
+            </p>
+            <Button asChild>
+              <Link href="/presupuestos/nuevo">
+                <Plus className="h-4 w-4 mr-2" />
+                Crear presupuesto
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const selectedBudget = selectedId
+    ? await getBudgetById(selectedId)
+    : await getActiveBudget();
+
+  if (!selectedBudget) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-semibold">Dashboard</h1>
+          <p className="text-sm text-muted-foreground">Tu centro de control financiero</p>
+        </div>
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-16 text-center gap-4">
+            <p className="text-muted-foreground text-lg">Presupuesto no encontrado</p>
+            <Button asChild>
+              <Link href="/dashboard">
+                Ver presupuesto activo
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const budget = selectedBudget;
 
   if (!budget) {
     return (
@@ -80,6 +145,8 @@ export default async function DashboardPage() {
     },
   }));
 
+  const budgetOptions = allBudgets.map((b) => ({ id: b.id, label: budgetLabel(b) }));
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -96,6 +163,8 @@ export default async function DashboardPage() {
           </Link>
         </Button>
       </div>
+
+      <BudgetFilter budgets={budgetOptions} selectedId={budget.id} />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card>

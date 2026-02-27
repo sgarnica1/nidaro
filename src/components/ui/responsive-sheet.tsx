@@ -24,7 +24,7 @@ export function ResponsiveSheet({ open, onOpenChange, title, trigger, children }
   const contentClassName = useMemo(
     () =>
       isMobile
-        ? "max-h-[85dvh] min-h-[50dvh] overflow-y-auto rounded-t-2xl border-t px-4 pt-6 pb-6 safe-area-inset-bottom"
+        ? "max-h-[85dvh] rounded-t-2xl border-t px-4 pt-6 pb-6 mb-16 safe-area-inset-bottom overflow-y-auto"
         : "overflow-y-auto w-[400px] sm:w-[440px] px-6",
     [isMobile]
   );
@@ -59,7 +59,7 @@ export function ResponsiveSheet({ open, onOpenChange, title, trigger, children }
           // The Sheet will close on the next escape press if combobox is already closed
         }}
       >
-        <SheetHeader className="mb-4 p-0 md:pt-4">
+        <SheetHeader className="mb-4 p-0">
           <SheetTitle>{title}</SheetTitle>
         </SheetHeader>
         {children}

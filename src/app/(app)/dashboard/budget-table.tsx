@@ -66,29 +66,29 @@ export function BudgetTable({ budget, expenses, categoryPercentages }: Props) {
     );
 
     const rows: CategoryRow[] = categoryIds.map((catId) => {
-    const assignedPct = categoryPercentages[catId] ?? 0;
-    const assignedAmount = (available * assignedPct) / 100;
-    const plannedAmount = plannedByCategory[catId] ?? 0;
-    const realAmount = realByCategory[catId] ?? 0;
-    const plannedPct = available > 0 ? (plannedAmount / available) * 100 : 0;
-    return {
-      categoryId: catId,
-      categoryName: "",
-      assignedPct,
-      assignedAmount,
-      plannedAmount,
-      realAmount,
-      plannedPct,
-    };
-  });
+      const assignedPct = categoryPercentages[catId] ?? 0;
+      const assignedAmount = (available * assignedPct) / 100;
+      const plannedAmount = plannedByCategory[catId] ?? 0;
+      const realAmount = realByCategory[catId] ?? 0;
+      const plannedPct = available > 0 ? (plannedAmount / available) * 100 : 0;
+      return {
+        categoryId: catId,
+        categoryName: "",
+        assignedPct,
+        assignedAmount,
+        plannedAmount,
+        realAmount,
+        plannedPct,
+      };
+    });
 
-  const catNameMap: Record<string, string> = {};
-  for (const plan of budget.expensePlans) {
-    catNameMap[plan.expenseCategory.budgetCategory.id] = plan.expenseCategory.budgetCategory.name;
-  }
-  for (const exp of expenses) {
-    catNameMap[exp.expenseCategory.budgetCategory.id] = exp.expenseCategory.budgetCategory.name;
-  }
+    const catNameMap: Record<string, string> = {};
+    for (const plan of budget.expensePlans) {
+      catNameMap[plan.expenseCategory.budgetCategory.id] = plan.expenseCategory.budgetCategory.name;
+    }
+    for (const exp of expenses) {
+      catNameMap[exp.expenseCategory.budgetCategory.id] = exp.expenseCategory.budgetCategory.name;
+    }
     for (const row of rows) {
       row.categoryName = catNameMap[row.categoryId] ?? row.categoryId;
     }
@@ -122,7 +122,7 @@ export function BudgetTable({ budget, expenses, categoryPercentages }: Props) {
               const exceeded = row.realAmount > row.assignedAmount;
               return (
                 <TableRow key={row.categoryId}>
-                  <TableCell className="font-medium">{row.categoryName}</TableCell>
+                  <TableCell className="font-medium capitalize">{row.categoryName}</TableCell>
                   <TableCell className="text-right">
                     <Badge variant="secondary">{row.assignedPct}%</Badge>
                   </TableCell>

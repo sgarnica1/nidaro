@@ -105,7 +105,7 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
       trigger={children}
     >
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pb-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <FormField
               control={form.control}
@@ -216,7 +216,7 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
             )}
           />
 
-          <div className="sticky bottom-0 bg-background pt-4 pb-2 -mx-4 px-4 border-t mt-6 flex gap-2 md:static md:border-t-0 md:pt-2 md:pb-0 md:mx-0">
+          <div className="flex gap-2 pt-2">
             <Button type="button" variant="outline" className="flex-1" onClick={() => setOpen(false)}>
               Cancelar
             </Button>
