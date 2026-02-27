@@ -9,7 +9,7 @@ import { getCategoriesWithPercentages } from "@/lib/actions/budget-structure";
 import { getExpenseCategories } from "@/lib/actions/expense-categories";
 import { BudgetTable } from "./budget-table";
 import { BudgetFilter } from "./budget-filter";
-import { ExpenseComparisonTable } from "./expense-comparison-table";
+import { BudgetCategoryCards } from "./budget-category-cards";
 import { BudgetExpensePlanForm } from "./budget-expense-plan-form";
 
 function formatCurrency(amount: number) {
@@ -153,10 +153,10 @@ export default async function DashboardPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-semibold">{budget.name ?? "Presupuesto activo"}</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-3xl font-semibold">{budget.name ?? "Presupuesto activo"}</h1>
+          <p className="text-sm text-muted-foreground mt-1">
             {formatDate(budget.startDate)} — {formatDate(budget.endDate)}
           </p>
         </div>
@@ -182,29 +182,28 @@ export default async function DashboardPage({
 
       <BudgetFilter budgets={budgetOptions} selectedId={budget.id} />
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card>
-          <CardContent className='px-4'>
-            <p className="text-xs text-muted-foreground">Ingreso disponible</p>
-            <p className="text-xl font-semibold mt-1">{formatCurrency(available)}</p>
+      <Card className="p-6 rounded-2xl border border-border/40 shadow-sm hover:shadow-md transition-shadow duration-300">
+        <p className="text-sm text-muted-foreground">Ingreso disponible</p>
+        <p className="text-4xl font-semibold tracking-tight mt-1">{formatCurrency(available)}</p>
+      </Card>
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <Card className="rounded-2xl border border-border/40 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">Planeado</p>
+            <p className="text-2xl font-semibold tracking-tight mt-1">{formatCurrency(totalPlanned)}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className='px-4'>
-            <p className="text-xs text-muted-foreground">Planeado</p>
-            <p className="text-xl font-semibold mt-1">{formatCurrency(totalPlanned)}</p>
+        <Card className="rounded-2xl border border-border/40 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">Real</p>
+            <p className="text-2xl font-semibold tracking-tight mt-1">{formatCurrency(totalReal)}</p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className='px-4'>
-            <p className="text-xs text-muted-foreground">Real</p>
-            <p className="text-xl font-semibold mt-1">{formatCurrency(totalReal)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className='px-4'>
-            <p className="text-xs text-muted-foreground">Restante</p>
-            <p className={`text-xl font-semibold mt-1 ${remaining < 0 ? "text-destructive" : "text-green-600"}`}>
+        <Card className="rounded-2xl border border-border/40 shadow-sm hover:shadow-md transition-shadow duration-300">
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">Restante</p>
+            <p className={`text-2xl font-semibold tracking-tight mt-1 ${remaining < 0 ? "text-red-600" : "text-emerald-600"}`}>
               {formatCurrency(remaining)}
             </p>
             {remaining < 0 && <Badge variant="destructive" className="text-xs mt-1">Excedido</Badge>}
@@ -218,7 +217,7 @@ export default async function DashboardPage({
         categoryPercentages={categoryPercentages}
       />
 
-      <ExpenseComparisonTable
+      <BudgetCategoryCards
         expensePlans={budget.expensePlans.map((p) => ({
           plannedAmount: p.plannedAmount,
           expenseCategory: {
@@ -255,6 +254,8 @@ export default async function DashboardPage({
               : null,
           },
         }))}
+        totalIncome={available}
+        categoryPercentages={categoryPercentages}
       />
 
       <BudgetExpensePlanForm
@@ -264,7 +265,7 @@ export default async function DashboardPage({
       >
         <Button
           size="icon"
-          className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg md:hidden z-40"
+          className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg md:hidden z-40 bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-200"
         >
           <Plus className="h-6 w-6" />
         </Button>

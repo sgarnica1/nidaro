@@ -35,9 +35,12 @@ export function BudgetChart({ categories }: Props) {
       xAxis: {
         categories: categories.map((c) => c.name),
         labels: { style: { fontSize: "13px" } },
+        gridLineColor: "transparent",
       },
       yAxis: {
         title: { text: undefined },
+        gridLineColor: "#e2e8f0",
+        gridLineWidth: 1,
         labels: {
           formatter() {
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -53,6 +56,14 @@ export function BudgetChart({ categories }: Props) {
       },
       tooltip: {
         shared: true,
+        borderRadius: 12,
+        shadow: {
+          color: "rgba(0, 0, 0, 0.1)",
+          offsetX: 0,
+          offsetY: 4,
+          opacity: 0.1,
+          width: 8,
+        },
         formatter() {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const points = (this as any).points ?? [];
@@ -68,13 +79,13 @@ export function BudgetChart({ categories }: Props) {
         },
       },
       plotOptions: {
-        column: { borderRadius: 4, groupPadding: 0.1 },
+        column: { borderRadius: 8, groupPadding: 0.15 },
       },
       series: [
         {
           type: "column" as const,
           name: "Asignado",
-          color: "#354f52",
+          color: "#64748b",
           data: categories.map((c) => c.assigned),
         },
         {
@@ -86,7 +97,7 @@ export function BudgetChart({ categories }: Props) {
         {
           type: "column" as const,
           name: "Real",
-          color: "#84a98c",
+          color: "#10b981",
           data: categories.map((c) => c.real),
         },
       ],

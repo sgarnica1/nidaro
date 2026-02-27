@@ -135,7 +135,7 @@ export function BudgetTable({ budget, expenses, categoryPercentages }: Props) {
                   <TableCell className="text-right text-sm">
                     {formatCurrency(row.plannedAmount)}
                   </TableCell>
-                  <TableCell className={cn("text-right font-medium", exceeded ? "text-destructive" : "text-green-600")}>
+                  <TableCell className={cn("text-right font-medium", exceeded ? "text-red-600" : "text-emerald-600")}>
                     {formatCurrency(row.realAmount)}
                   </TableCell>
                 </TableRow>

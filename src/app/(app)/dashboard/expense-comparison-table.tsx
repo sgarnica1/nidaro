@@ -176,9 +176,9 @@ export function ExpenseComparisonTable({ expensePlans, expenses }: Props) {
                   className={cn(
                     "text-xs font-medium",
                     totalReal > totalPlanned
-                      ? "text-destructive"
+                      ? "text-red-600"
                       : totalReal === totalPlanned
-                      ? "text-green-600"
+                      ? "text-emerald-600"
                       : "text-muted-foreground"
                   )}
                 >
@@ -206,9 +206,9 @@ export function ExpenseComparisonTable({ expensePlans, expenses }: Props) {
                           className={cn(
                             "text-xs font-medium",
                             subcatReal > subcatPlanned
-                              ? "text-destructive"
+                              ? "text-red-600"
                               : subcatReal === subcatPlanned
-                              ? "text-green-600"
+                              ? "text-emerald-600"
                               : "text-muted-foreground"
                           )}
                         >
@@ -232,9 +232,9 @@ export function ExpenseComparisonTable({ expensePlans, expenses }: Props) {
                                 className={cn(
                                   "font-semibold text-sm shrink-0",
                                   exceeded
-                                    ? "text-destructive"
+                                    ? "text-red-600"
                                     : expense.realAmount === expense.plannedAmount
-                                    ? "text-green-600"
+                                    ? "text-emerald-600"
                                     : "text-muted-foreground"
                                 )}
                               >

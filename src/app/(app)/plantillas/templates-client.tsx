@@ -29,7 +29,7 @@ export function TemplatesClient({ templates, expenseCategories, budgetCategories
           <h1 className="text-2xl font-semibold">Plantillas</h1>
           <p className="text-sm text-muted-foreground">Estructuras de presupuesto reutilizables</p>
         </div>
-        <Button className="hidden md:flex" onClick={() => setNewTemplateOpen(true)}>
+        <Button className="hidden md:flex bg-primary hover:bg-primary/90" onClick={() => setNewTemplateOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Nueva plantilla
         </Button>
@@ -72,7 +72,7 @@ export function TemplatesClient({ templates, expenseCategories, budgetCategories
 
       <Button
         size="icon"
-        className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg md:hidden z-40"
+        className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg md:hidden z-40 bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-200"
         onClick={() => setNewTemplateOpen(true)}
       >
         <Plus className="h-6 w-6" />

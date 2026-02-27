@@ -24,7 +24,7 @@ export default async function IngresosPage() {
           <p className="text-sm text-muted-foreground">Gestiona tus fuentes de ingreso</p>
         </div>
         <IncomeForm>
-          <Button className="hidden md:flex">
+          <Button className="hidden md:flex bg-primary hover:bg-primary/90">
             <Plus className="h-4 w-4 mr-2" />
             Agregar ingreso
           </Button>

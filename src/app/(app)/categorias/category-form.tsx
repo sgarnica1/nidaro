@@ -217,7 +217,7 @@ export function CategoryForm({ budgetCategories, expenseCategory, defaultCategor
             )}
           />
 
-          <Button type="submit" className="w-full mt-6" disabled={form.formState.isSubmitting}>
+          <Button type="submit" className="w-full mt-6 bg-primary hover:bg-primary/90" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? "Guardando..." : "Guardar"}
           </Button>
         </form>

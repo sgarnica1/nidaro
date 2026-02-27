@@ -105,123 +105,125 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
       trigger={children}
     >
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => {
-                const dateValue = field.value ? new Date(field.value + "T12:00:00") : undefined;
-                return (
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
+          <div className="flex-1 overflow-y-auto space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="date"
+                render={({ field }) => {
+                  const dateValue = field.value ? new Date(field.value + "T12:00:00") : undefined;
+                  return (
+                    <FormItem>
+                      <FormLabel>Fecha</FormLabel>
+                      <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                        <PopoverTrigger asChild>
+                          <FormControl>
+                            <Button
+                              variant="outline"
+                              className={cn(
+                                "w-full justify-start text-left font-normal",
+                                !field.value && "text-muted-foreground"
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-4 w-4" />
+                              {dateValue
+                                ? format(dateValue, "d MMM yyyy", { locale: es })
+                                : "Selecciona"}
+                            </Button>
+                          </FormControl>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 z-[200]" align="start">
+                          <Calendar
+                            mode="single"
+                            selected={dateValue}
+                            onSelect={(day) => {
+                              if (day) {
+                                field.onChange(day.toISOString().split("T")[0]);
+                                setCalendarOpen(false);
+                              }
+                            }}
+                            initialFocus
+                          />
+                        </PopoverContent>
+                      </Popover>
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
+              />
+              <FormField
+                control={form.control}
+                name="amount"
+                render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Fecha</FormLabel>
-                    <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full justify-start text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-4 w-4" />
-                            {dateValue
-                              ? format(dateValue, "d MMM yyyy", { locale: es })
-                              : "Selecciona"}
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0 z-[200]" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={dateValue}
-                          onSelect={(day) => {
-                            if (day) {
-                              field.onChange(day.toISOString().split("T")[0]);
-                              setCalendarOpen(false);
-                            }
-                          }}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
+                    <FormLabel>Monto</FormLabel>
+                    <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} /></FormControl>
                     <FormMessage />
                   </FormItem>
-                );
-              }}
-            />
+                )}
+              />
+            </div>
+
             <FormField
               control={form.control}
-              name="amount"
+              name="expenseCategoryId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Monto</FormLabel>
-                  <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} /></FormControl>
+                  <FormLabel>Categoría</FormLabel>
+                  <Combobox
+                    items={expenseCategories.map((c) => c.id)}
+                    value={field.value || null}
+                    onValueChange={(id: string | null) => { if (id) field.onChange(id); }}
+                    itemToStringLabel={(id: string) => expenseCategories.find((c) => c.id === id)?.name ?? ""}
+                    itemToStringValue={(id: string) => expenseCategories.find((c) => c.id === id)?.name ?? ""}
+                  >
+                    <ComboboxInput placeholder="Buscar categoría..." showClear className="w-full" />
+                    <ComboboxContent className="z-[200]">
+                      <ComboboxEmpty>No se encontraron categorías.</ComboboxEmpty>
+                      <ComboboxList>
+                        {(id: string) => {
+                          const cat = expenseCategories.find((c) => c.id === id);
+                          if (!cat) return null;
+                          return (
+                            <ComboboxItem key={cat.id} value={cat.id}>
+                              <div className="flex items-center gap-2">
+                                <span className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
+                                <span>{cat.name}</span>
+                                <span className="text-muted-foreground text-xs">· {cat.budgetCategory.name}</span>
+                              </div>
+                            </ComboboxItem>
+                          );
+                        }}
+                      </ComboboxList>
+                    </ComboboxContent>
+                  </Combobox>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Descripción</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Ej: Compra supermercado..." {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
           </div>
-
-          <FormField
-            control={form.control}
-            name="expenseCategoryId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Categoría</FormLabel>
-                <Combobox
-                  items={expenseCategories.map((c) => c.id)}
-                  value={field.value || null}
-                  onValueChange={(id: string | null) => { if (id) field.onChange(id); }}
-                  itemToStringLabel={(id: string) => expenseCategories.find((c) => c.id === id)?.name ?? ""}
-                  itemToStringValue={(id: string) => expenseCategories.find((c) => c.id === id)?.name ?? ""}
-                >
-                  <ComboboxInput placeholder="Buscar categoría..." showClear className="w-full" />
-                  <ComboboxContent className="z-[200]">
-                    <ComboboxEmpty>No se encontraron categorías.</ComboboxEmpty>
-                    <ComboboxList>
-                      {(id: string) => {
-                        const cat = expenseCategories.find((c) => c.id === id);
-                        if (!cat) return null;
-                        return (
-                          <ComboboxItem key={cat.id} value={cat.id}>
-                            <div className="flex items-center gap-2">
-                              <span className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
-                              <span>{cat.name}</span>
-                              <span className="text-muted-foreground text-xs">· {cat.budgetCategory.name}</span>
-                            </div>
-                          </ComboboxItem>
-                        );
-                      }}
-                    </ComboboxList>
-                  </ComboboxContent>
-                </Combobox>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Descripción</FormLabel>
-                <FormControl>
-                  <Input placeholder="Ej: Compra supermercado..." {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <div className="flex gap-2 pt-2">
-            <Button type="button" variant="outline" className="flex-1" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" className="flex-1" disabled={form.formState.isSubmitting}>
+          <div className="flex flex-col gap-2 pt-4 mt-auto border-t">
+            <Button type="submit" className="w-full bg-primary hover:bg-primary/90" disabled={form.formState.isSubmitting}>
               {form.formState.isSubmitting ? "Guardando..." : "Guardar"}
+            </Button>
+            <Button type="button" variant="outline" className="w-full" onClick={() => setOpen(false)}>
+              Cancelar
             </Button>
           </div>
         </form>
