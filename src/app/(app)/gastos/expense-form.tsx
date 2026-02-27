@@ -33,7 +33,7 @@ import { CategoryPickerSheet } from "./category-picker-sheet";
 const schema = z.object({
   budgetId: z.string().min(1),
   expenseCategoryId: z.string().min(1, "Selecciona una categoría"),
-  name: z.string().optional(),
+  name: z.string().default(""),
   amount: z.coerce.number().positive("El monto debe ser positivo"),
   date: z.string().min(1, "La fecha es requerida"),
 });
@@ -179,8 +179,8 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
                               amountError
                                 ? "bg-[#DC2626] scale-x-100"
                                 : amount > 0 || amountFocused
-                                ? "bg-[#1C3D2E] scale-x-100"
-                                : "bg-[#1C3D2E] scale-x-0"
+                                  ? "bg-[#1C3D2E] scale-x-100"
+                                  : "bg-[#1C3D2E] scale-x-0"
                             )}
                           />
                         </div>
@@ -267,10 +267,10 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
                         style={
                           isSelected
                             ? {
-                                backgroundColor: `${cat.color}20`,
-                                color: cat.color,
-                                borderColor: cat.color,
-                              }
+                              backgroundColor: `${cat.color}20`,
+                              color: cat.color,
+                              borderColor: cat.color,
+                            }
                             : {}
                         }
                       >
