@@ -9,10 +9,10 @@ export default async function NuevoPresupuestoPage() {
   ]);
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
-      <div>
-        <h1 className="text-2xl font-semibold">Nuevo Presupuesto</h1>
-        <p className="text-sm text-muted-foreground">
+    <div className="px-5 max-w-2xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-[22px] font-semibold text-[#111111] mb-1">Nuevo Presupuesto</h1>
+        <p className="text-[15px] text-[#6B7280]">
           Configura tu presupuesto mensual paso a paso
         </p>
       </div>

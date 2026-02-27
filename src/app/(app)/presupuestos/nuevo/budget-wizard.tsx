@@ -68,6 +68,8 @@ function formatCurrency(amount: number) {
   return new Intl.NumberFormat("es-MX", {
     style: "currency",
     currency: "MXN",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
   }).format(amount);
 }
 
@@ -174,14 +176,14 @@ export function BudgetWizard({ incomeSources: initialSources, templates }: Props
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
 
         {/* ── 1. Información general ── */}
-        <Card>
-          <CardHeader>
-            <CardTitle>1. Información general</CardTitle>
+        <Card className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.04)] border-0">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-[22px] font-semibold text-[#111111]">1. Información general</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-5 pt-0">
             <FormField
               control={form.control}
               name="name"
@@ -282,22 +284,23 @@ export function BudgetWizard({ incomeSources: initialSources, templates }: Props
         </Card>
 
         {/* ── 2. Fuentes de ingreso ── */}
-        <Card>
-          <CardHeader>
+        <Card className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.04)] border-0">
+          <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle>2. Fuentes de ingreso</CardTitle>
+              <CardTitle className="text-[22px] font-semibold text-[#111111]">2. Fuentes de ingreso</CardTitle>
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() => setShowIncomeForm((v) => !v)}
+                className="text-[#1C3D2E] hover:text-[#1C3D2E] hover:bg-[#EAF2EC]"
               >
                 <Plus className="h-4 w-4 sm:mr-1" />
                 <span className="hidden sm:inline">Agregar</span>
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-4 pt-0">
             {/* Inline add income form */}
             {showIncomeForm && (
               <div className="rounded-lg border bg-muted/40 p-3 space-y-3">
@@ -354,17 +357,10 @@ export function BudgetWizard({ incomeSources: initialSources, templates }: Props
             )}
 
             {incomeSources.length === 0 && !showIncomeForm && (
-              <p className="text-sm text-muted-foreground">
-                No tienes fuentes de ingreso.{" "}
-                <button
-                  type="button"
-                  className="underline text-foreground"
-                  onClick={() => setShowIncomeForm(true)}
-                >
-                  Agrega una aquí
-                </button>{" "}
-                o ve a la sección de Ingresos.
-              </p>
+              <div className="py-8 text-center">
+                <p className="text-[15px] text-[#6B7280] mb-2">Sin gastos</p>
+                <p className="text-[13px] text-[#6B7280]">Toca + para agregar</p>
+              </div>
             )}
 
             {incomeSources.map((source) => (
@@ -409,26 +405,30 @@ export function BudgetWizard({ incomeSources: initialSources, templates }: Props
         </Card>
 
         {/* ── 3. Deducciones ── */}
-        <Card>
-          <CardHeader>
+        <Card className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.04)] border-0">
+          <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle>3. Deducciones</CardTitle>
+              <CardTitle className="text-[22px] font-semibold text-[#111111]">3. Deducciones</CardTitle>
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 size="sm"
                 onClick={() =>
                   append({ name: "Diezmo", type: "PERCENTAGE", value: 10 })
                 }
+                className="text-[#1C3D2E] hover:text-[#1C3D2E] hover:bg-[#EAF2EC]"
               >
                 <Plus className="h-4 w-4 sm:mr-1" />
                 <span className="hidden sm:inline">Agregar</span>
               </Button>
             </div>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-4 pt-0">
             {fields.length === 0 && (
-              <p className="text-sm text-muted-foreground">Sin deducciones.</p>
+              <div className="py-8 text-center">
+                <p className="text-[15px] text-[#6B7280] mb-2">Sin deducciones</p>
+                <p className="text-[13px] text-[#6B7280]">Toca + para agregar</p>
+              </div>
             )}
             {fields.map((field, index) => (
               <div
@@ -499,11 +499,11 @@ export function BudgetWizard({ incomeSources: initialSources, templates }: Props
         </Card>
 
         {/* ── Resumen ── */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Resumen</CardTitle>
+        <Card className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.04)] border-0">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-[22px] font-semibold text-[#111111]">Resumen</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">
+          <CardContent className="space-y-3 pt-0">
             <div className="flex justify-between text-sm">
               <span className="text-muted-foreground">Ingreso bruto</span>
               <span>{formatCurrency(grossIncome)}</span>
@@ -517,16 +517,20 @@ export function BudgetWizard({ incomeSources: initialSources, templates }: Props
               </div>
             )}
             <Separator />
-            <div className="flex justify-between font-semibold">
-              <span>Ingreso disponible</span>
-              <span className="text-primary">
+            <div className="flex justify-between pt-2">
+              <span className="text-[15px] font-semibold text-[#111111]">Ingreso disponible</span>
+              <span className="text-[15px] font-semibold text-[#1C3D2E]">
                 {formatCurrency(availableIncome)}
               </span>
             </div>
           </CardContent>
         </Card>
 
-        <Button type="submit" className="w-full" disabled={pending}>
+        <Button 
+          type="submit" 
+          className="w-full h-12 text-base rounded-xl bg-[#1C3D2E] hover:bg-[#1C3D2E]/90 text-white" 
+          disabled={pending}
+        >
           {pending ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin mr-2" />

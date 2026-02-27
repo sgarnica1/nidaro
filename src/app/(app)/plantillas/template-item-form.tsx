@@ -77,7 +77,7 @@ export function TemplateItemForm({
 
   // First filter by budget category, then exclude already added categories
   const filteredCategories = (filterBudgetCategoryId
-    ? expenseCategories.filter((c) => c.categoryId === filterBudgetCategoryId)
+    ? expenseCategories.filter((c) => c.budgetCategory.id === filterBudgetCategoryId)
     : expenseCategories
   ).filter((c) => !existingItemCategoryIds.includes(c.id));
 
@@ -146,180 +146,180 @@ export function TemplateItemForm({
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
           <div className="space-y-4 flex-1">
-            <FormField
-              control={form.control}
-              name="expenseCategoryId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Categoría de gasto</FormLabel>
-                  {filteredCategories.length === 0 && !showNewCat ? (
-                    <p className="text-sm text-muted-foreground">
-                      No hay categorías de gasto{activeBudgetCatName ? ` en ${activeBudgetCatName}` : ""}.{" "}
-                      <button
-                        type="button"
-                        className="underline text-foreground"
-                        onClick={() => setShowNewCat(true)}
-                      >
-                        Crea una aquí
-                      </button>
-                    </p>
-                  ) : (
-                    <div>
-                      <Combobox
-                        items={filteredCategories.map((c) => c.id)}
-                        value={field.value || null}
-                        onValueChange={(id: string | null) => {
-                          if (id) {
-                            field.onChange(id);
-                          }
-                        }}
-                        itemToStringLabel={(id: string) => {
-                          const cat = filteredCategories.find((c) => c.id === id);
-                          return cat?.name || "";
-                        }}
-                        itemToStringValue={(id: string) => {
-                          const cat = filteredCategories.find((c) => c.id === id);
-                          return cat?.name || "";
-                        }}
-                      >
+          <FormField
+            control={form.control}
+            name="expenseCategoryId"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Categoría de gasto</FormLabel>
+                {filteredCategories.length === 0 && !showNewCat ? (
+                  <p className="text-sm text-muted-foreground">
+                    No hay categorías de gasto{activeBudgetCatName ? ` en ${activeBudgetCatName}` : ""}.{" "}
+                    <button
+                      type="button"
+                      className="underline text-foreground"
+                      onClick={() => setShowNewCat(true)}
+                    >
+                      Crea una aquí
+                    </button>
+                  </p>
+                ) : (
+                  <div>
+                    <Combobox
+                      items={filteredCategories.map((c) => c.id)}
+                      value={field.value || null}
+                      onValueChange={(id: string | null) => {
+                        if (id) {
+                          field.onChange(id);
+                        }
+                      }}
+                      itemToStringLabel={(id: string) => {
+                        const cat = filteredCategories.find((c) => c.id === id);
+                        return cat?.name || "";
+                      }}
+                      itemToStringValue={(id: string) => {
+                        const cat = filteredCategories.find((c) => c.id === id);
+                        return cat?.name || "";
+                      }}
+                    >
                         <FormControl>
-                          <ComboboxInput
-                            placeholder="Buscar categoría..."
-                            showClear
-                            className="w-full"
-                          />
-                        </FormControl>
-                        <ComboboxContent className="z-100">
-                          <ComboboxEmpty>No se encontraron categorías.</ComboboxEmpty>
-                          <ComboboxList>
-                            {(id: string) => {
-                              const cat = filteredCategories.find((c) => c.id === id);
-                              if (!cat) return null;
-                              return (
-                                <ComboboxItem
-                                  key={cat.id}
-                                  value={cat.id}
-                                >
-                                  <div className="flex items-center gap-2">
-                                    <span
-                                      className="h-3 w-3 rounded-full shrink-0"
-                                      style={{ backgroundColor: cat.color }}
-                                    />
-                                    <span>{cat.name}</span>
-                                    {!filterBudgetCategoryId && (
-                                      <span className="text-muted-foreground text-xs">
-                                        · {cat.budgetCategory.name}
-                                      </span>
-                                    )}
-                                  </div>
-                                </ComboboxItem>
-                              );
-                            }}
-                          </ComboboxList>
-                        </ComboboxContent>
-                      </Combobox>
-                    </div>
-                  )}
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {filteredCategories.length > 0 && (
-              <button
-                type="button"
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-                onClick={() => setShowNewCat((v) => !v)}
-              >
-                {showNewCat ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                {showNewCat ? "Cancelar nueva categoría" : "+ Nueva categoría de gasto"}
-              </button>
-            )}
-
-            {showNewCat && (
-              <div className="rounded-lg border bg-muted/40 p-3 space-y-3">
-                <p className="text-sm font-medium">Nueva categoría de gasto</p>
-                <div className="space-y-2">
-                  <Input
-                    placeholder="Nombre (ej: Alquiler, Netflix...)"
-                    value={newCatName}
-                    onChange={(e) => setNewCatName(e.target.value)}
-                    disabled={creatingCat}
-                  />
-                  {!filterBudgetCategoryId && (
-                    <Select value={newCatBudgetId} onValueChange={setNewCatBudgetId} disabled={creatingCat}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Grupo (Necesidades, Gustos, Ahorro)" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {budgetCategories.map((bc) => (
-                          <SelectItem key={bc.id} value={bc.id}>{bc.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                  <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-none pt-1">
-                    {EXPENSE_COLORS.map((c) => (
-                      <button
-                        key={c.value}
-                        type="button"
-                        title={c.name}
-                        disabled={creatingCat}
-                        onClick={() => setNewCatColor(c.value)}
-                        className={cn(
-                          "h-7 w-7 shrink-0 rounded-full border-2 transition-transform hover:scale-110",
-                          newCatColor === c.value
-                            ? "border-foreground scale-110"
-                            : "border-transparent"
-                        )}
-                        style={{ backgroundColor: c.value }}
+                      <ComboboxInput
+                        placeholder="Buscar categoría..."
+                        showClear
+                        className="w-full"
                       />
-                    ))}
+                        </FormControl>
+                      <ComboboxContent className="z-[200]">
+                        <ComboboxEmpty>No se encontraron categorías.</ComboboxEmpty>
+                        <ComboboxList>
+                          {(id: string) => {
+                            const cat = filteredCategories.find((c) => c.id === id);
+                            if (!cat) return null;
+                            return (
+                              <ComboboxItem
+                                key={cat.id}
+                                value={cat.id}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className="h-3 w-3 rounded-full shrink-0"
+                                    style={{ backgroundColor: cat.color }}
+                                  />
+                                  <span>{cat.name}</span>
+                                  {!filterBudgetCategoryId && (
+                                    <span className="text-muted-foreground text-xs">
+                                      · {cat.budgetCategory.name}
+                                    </span>
+                                  )}
+                                </div>
+                              </ComboboxItem>
+                            );
+                          }}
+                        </ComboboxList>
+                      </ComboboxContent>
+                    </Combobox>
                   </div>
-                </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={handleCreateCategory}
-                  disabled={creatingCat || !newCatName.trim() || !newCatBudgetId}
-                >
-                  {creatingCat ? (
-                    <Loader2 className="h-4 w-4 animate-spin mr-1" />
-                  ) : (
-                    <Plus className="h-4 w-4 mr-1" />
-                  )}
-                  Crear y seleccionar
-                </Button>
-              </div>
+                )}
+                <FormMessage />
+              </FormItem>
             )}
+          />
 
-            <Separator />
+          {filteredCategories.length > 0 && (
+            <button
+              type="button"
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => setShowNewCat((v) => !v)}
+            >
+              {showNewCat ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              {showNewCat ? "Cancelar nueva categoría" : "+ Nueva categoría de gasto"}
+            </button>
+          )}
 
-            <FormField
-              control={form.control}
-              name="plannedAmount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Monto planeado</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="0.00" step="0.01" min="0" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+          {showNewCat && (
+            <div className="rounded-lg border bg-muted/40 p-3 space-y-3">
+              <p className="text-sm font-medium">Nueva categoría de gasto</p>
+              <div className="space-y-2">
+                <Input
+                  placeholder="Nombre (ej: Alquiler, Netflix...)"
+                  value={newCatName}
+                  onChange={(e) => setNewCatName(e.target.value)}
+                  disabled={creatingCat}
+                />
+                {!filterBudgetCategoryId && (
+                  <Select value={newCatBudgetId} onValueChange={setNewCatBudgetId} disabled={creatingCat}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Grupo (Necesidades, Gustos, Ahorro)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {budgetCategories.map((bc) => (
+                        <SelectItem key={bc.id} value={bc.id}>{bc.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+                <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-none pt-1">
+                  {EXPENSE_COLORS.map((c) => (
+                    <button
+                      key={c.value}
+                      type="button"
+                      title={c.name}
+                      disabled={creatingCat}
+                      onClick={() => setNewCatColor(c.value)}
+                      className={cn(
+                        "h-7 w-7 shrink-0 rounded-full border-2 transition-transform hover:scale-110",
+                        newCatColor === c.value
+                          ? "border-foreground scale-110"
+                          : "border-transparent"
+                      )}
+                      style={{ backgroundColor: c.value }}
+                    />
+                  ))}
+                </div>
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleCreateCategory}
+                disabled={creatingCat || !newCatName.trim() || !newCatBudgetId}
+              >
+                {creatingCat ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                ) : (
+                  <Plus className="h-4 w-4 mr-1" />
+                )}
+                Crear y seleccionar
+              </Button>
+            </div>
+          )}
+
+          <Separator />
+
+          <FormField
+            control={form.control}
+            name="plannedAmount"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Monto planeado</FormLabel>
+                <FormControl>
+                  <Input type="number" placeholder="0.00" step="0.01" min="0" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
           </div>
           <div className="sticky bottom-0 bg-background border-t pt-4 pb-4 -mx-4 px-4 mt-auto">
-            <Button
-              type="submit"
+          <Button
+            type="submit"
               className="w-full h-12 text-base"
-              disabled={form.formState.isSubmitting || filteredCategories.length === 0}
-            >
-              {form.formState.isSubmitting ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-1" />
-              ) : null}
-              Agregar
-            </Button>
+            disabled={form.formState.isSubmitting || filteredCategories.length === 0}
+          >
+            {form.formState.isSubmitting ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-1" />
+            ) : null}
+            Agregar
+          </Button>
           </div>
         </form>
       </Form>

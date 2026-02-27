@@ -14,7 +14,7 @@ export function IncomeFAB() {
       <Button
         size="icon"
         className={cn(
-          "fixed bottom-24 right-4 h-14 w-14 rounded-full shadow-lg md:hidden z-[60] bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-200",
+          "fixed bottom-24 right-5 h-14 w-14 rounded-full md:hidden z-[60] bg-[#1C3D2E] hover:bg-[#1C3D2E]/90 text-white shadow-[0_4px_16px_rgba(28,61,46,0.35)] transition-opacity active:opacity-75",
           isFormOpen && "hidden"
         )}
       >

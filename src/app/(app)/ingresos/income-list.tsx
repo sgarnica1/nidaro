@@ -1,25 +1,10 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { MoreVertical, Pencil, Trash2, Wallet } from "lucide-react";
+import { ChevronRight, Pencil, Trash2, Wallet } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
 import {
   Dialog,
   DialogContent,
@@ -30,23 +15,37 @@ import {
 } from "@/components/ui/dialog";
 import { IncomeForm } from "./income-form";
 import { toggleIncomeSource, deleteIncomeSource, type SerializedIncomeSource } from "@/lib/actions/income";
-import { useIsMobile } from "@/hooks/use-is-mobile";
+import { cn } from "@/lib/utils";
 
 type Props = {
   sources: SerializedIncomeSource[];
+  totalActive: number;
   onAddIncome?: () => void;
 };
 
 function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(amount);
+  return new Intl.NumberFormat("es-MX", {
+    style: "currency",
+    currency: "MXN",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
 }
 
-export function IncomeList({ sources, onAddIncome }: Props) {
-  const isMobile = useIsMobile();
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((word) => word[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+export function IncomeList({ sources, totalActive, onAddIncome }: Props) {
   const [pending, startTransition] = useTransition();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingSource, setEditingSource] = useState<SerializedIncomeSource | null>(null);
-  const [mobileActionSource, setMobileActionSource] = useState<SerializedIncomeSource | null>(null);
+  const [pressedRow, setPressedRow] = useState<string | null>(null);
 
   function handleToggle(id: string) {
     startTransition(async () => {
@@ -61,16 +60,10 @@ export function IncomeList({ sources, onAddIncome }: Props) {
     });
   }
 
-  function handleMobileEdit() {
-    const source = mobileActionSource;
-    setMobileActionSource(null);
-    setTimeout(() => setEditingSource(source), 150);
-  }
-
-  function handleMobileDelete() {
-    const source = mobileActionSource;
-    setMobileActionSource(null);
-    setTimeout(() => setDeletingId(source?.id ?? null), 150);
+  function handleRowPress(id: string) {
+    setPressedRow(id);
+    setTimeout(() => setPressedRow(null), 150);
+    setTimeout(() => setEditingSource(sources.find((s) => s.id === id) ?? null), 150);
   }
 
   if (sources.length === 0) {
@@ -93,58 +86,56 @@ export function IncomeList({ sources, onAddIncome }: Props) {
 
   return (
     <>
-      <div className="divide-y rounded-lg border overflow-hidden">
-        {sources.map((source) => (
-          <div
-            key={source.id}
-            className="flex items-center justify-between px-4 py-3 bg-card hover:bg-muted/40 transition-colors"
-          >
-            <div className="flex items-center gap-3 min-w-0">
-              <Switch
-                checked={source.isActive}
-                onCheckedChange={() => handleToggle(source.id)}
-                disabled={pending}
-                onClick={(e) => e.stopPropagation()}
-              />
-              <div
-                className="min-w-0"
-                role={isMobile ? "button" : undefined}
-                tabIndex={isMobile ? 0 : undefined}
-                onClick={isMobile ? () => setMobileActionSource(source) : undefined}
-                onKeyDown={isMobile ? (e) => e.key === "Enter" && setMobileActionSource(source) : undefined}
-              >
-                <p className={source.isActive ? "font-medium" : "font-medium text-muted-foreground line-through"}>
-                  {source.name}
-                </p>
-                <p className="text-sm text-muted-foreground">{formatCurrency(source.amount)}</p>
-              </div>
-              {!source.isActive && (
-                <Badge variant="secondary" className="text-xs">Inactivo</Badge>
-              )}
-            </div>
+      <div className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.04)] overflow-hidden">
+        {sources.map((source, index) => {
+          const percentage = totalActive > 0 ? ((source.amount / totalActive) * 100).toFixed(0) : "0";
+          const isActive = source.isActive;
 
-            {!isMobile && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => setEditingSource(source)}>
-                    <Pencil className="h-4 w-4 mr-2" />
-                    Editar
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem variant="destructive" onClick={() => setDeletingId(source.id)}>
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    Eliminar
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
-        ))}
+          return (
+            <div key={source.id}>
+              {index > 0 && <div className="h-px bg-[#F3F4F6] ml-14" />}
+              <div
+                onClick={() => handleRowPress(source.id)}
+                className={cn(
+                  "w-full flex items-center justify-between h-16 px-5 transition-colors cursor-pointer",
+                  pressedRow === source.id ? "bg-[#F3F4F6]" : "bg-white hover:bg-[#F3F4F6]"
+                )}
+              >
+                <div className="flex items-center gap-4 min-w-0 flex-1">
+                  <div className="h-9 w-9 rounded-full bg-[#EAF2EC] flex items-center justify-center shrink-0">
+                    <span className="text-[13px] font-semibold text-[#1C3D2E]">
+                      {getInitials(source.name)}
+                    </span>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className={cn(
+                      "text-[15px] font-semibold mb-0.5",
+                      isActive ? "text-[#111111]" : "text-[#6B7280] line-through"
+                    )}>
+                      {source.name}
+                    </p>
+                    <p className="text-[13px] text-[#6B7280]">
+                      {formatCurrency(source.amount)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="text-[12px] text-[#6B7280] font-medium">
+                      {percentage}%
+                    </span>
+                    <div onClick={(e) => e.stopPropagation()}>
+                      <Switch
+                        checked={isActive}
+                        onCheckedChange={() => handleToggle(source.id)}
+                        disabled={pending}
+                        className="data-[state=checked]:bg-[#1C3D2E]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {editingSource && (
@@ -157,42 +148,26 @@ export function IncomeList({ sources, onAddIncome }: Props) {
         </IncomeForm>
       )}
 
-      <Sheet open={!!mobileActionSource} onOpenChange={(o) => !o && setMobileActionSource(null)}>
-        <SheetContent side="bottom" className="rounded-t-2xl border-t px-4 pt-6 pb-8">
-          <SheetHeader className="mb-4">
-            <SheetTitle className="text-base">{mobileActionSource?.name}</SheetTitle>
-          </SheetHeader>
-          <div className="space-y-2">
-            <Button variant="ghost" className="w-full justify-start gap-3 h-12 text-base" onClick={handleMobileEdit}>
-              <Pencil className="h-5 w-5" />
-              Editar
-            </Button>
-            <Button
-              variant="ghost"
-              className="w-full justify-start gap-3 h-12 text-base text-destructive hover:text-destructive"
-              onClick={handleMobileDelete}
-            >
-              <Trash2 className="h-5 w-5" />
-              Eliminar
-            </Button>
-          </div>
-        </SheetContent>
-      </Sheet>
-
       <Dialog open={!!deletingId} onOpenChange={(o) => !o && setDeletingId(null)}>
-        <DialogContent>
+        <DialogContent className="rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Eliminar ingreso</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-[22px] font-semibold">Eliminar ingreso</DialogTitle>
+            <DialogDescription className="text-[15px] text-[#6B7280]">
               Esta acción no se puede deshacer.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" className="h-12 text-base flex-1" onClick={() => setDeletingId(null)}>Cancelar</Button>
+          <DialogFooter className="gap-2 mt-6">
+            <Button
+              variant="outline"
+              className="h-12 text-base flex-1 rounded-xl"
+              onClick={() => setDeletingId(null)}
+            >
+              Cancelar
+            </Button>
             <Button
               variant="destructive"
               disabled={pending}
-              className="h-12 text-base flex-1"
+              className="h-12 text-base flex-1 rounded-xl bg-[#DC2626] hover:bg-[#DC2626]/90"
               onClick={() => deletingId && handleDelete(deletingId)}
             >
               Eliminar
