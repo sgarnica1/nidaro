@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { toast } from "sonner";
 import { MoreVertical, Pencil, Trash2, Receipt } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -98,12 +97,7 @@ export function ExpenseList({ expenses, expenseCategories, budgetId, onAddExpens
   function handleDelete(id: string) {
     setDeletingId(null);
     startTransition(async () => {
-      const result = await deleteExpense(id);
-      if (result.success) {
-        toast.success("Gasto eliminado");
-      } else {
-        toast.error(result.error);
-      }
+      await deleteExpense(id);
     });
   }
 

@@ -4,7 +4,6 @@ import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { toast } from "sonner";
 import {
   Form,
   FormControl,
@@ -40,6 +39,8 @@ type Props = {
   existingCategoryIds?: string[];
   children: React.ReactNode;
   onPlanAdded?: () => void;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
 export function BudgetExpensePlanForm({
@@ -48,8 +49,11 @@ export function BudgetExpensePlanForm({
   existingCategoryIds = [],
   children,
   onPlanAdded,
+  open: controlledOpen,
+  onOpenChange,
 }: Props) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
   const [pending, startTransition] = useTransition();
 
   const filteredCategories = expenseCategories.filter(
@@ -62,7 +66,8 @@ export function BudgetExpensePlanForm({
   });
 
   function handleOpenChange(val: boolean) {
-    setOpen(val);
+    setInternalOpen(val);
+    onOpenChange?.(val);
     if (!val) {
       form.reset();
     }
@@ -76,11 +81,8 @@ export function BudgetExpensePlanForm({
         plannedAmount: values.plannedAmount,
       });
       if (result.success) {
-        toast.success("Categoría agregada al presupuesto");
         onPlanAdded?.();
         handleOpenChange(false);
-      } else {
-        toast.error(result.error);
       }
     });
   }

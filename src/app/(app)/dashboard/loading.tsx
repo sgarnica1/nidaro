@@ -1,29 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 
 export default function DashboardLoading() {
-  const [show, setShow] = useState(false);
-
-  useEffect(() => {
-    const timer = setTimeout(() => setShow(true), 400);
-    return () => clearTimeout(timer);
-  }, []);
-
   return (
     <div className="space-y-6">
-      <AnimatePresence>
-        {show && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-6"
-          >
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.3 }}
+        className="space-y-6"
+      >
             <div className="flex items-start justify-between">
               <div className="space-y-2">
                 <Skeleton className="h-9 w-48 rounded-md" />
@@ -37,14 +27,14 @@ export default function DashboardLoading() {
 
             <Skeleton className="h-10 w-48 rounded-md" />
 
-            <Card className="p-6 rounded-2xl border border-border/40 shadow-sm">
+            <Card className="p-6 rounded-2xl border border-border/40 shadow-sm bg-background">
               <Skeleton className="h-4 w-32 rounded-md mb-2" />
               <Skeleton className="h-10 w-48 rounded-md" />
             </Card>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
               {[1, 2, 3].map((i) => (
-                <Card key={i} className="rounded-2xl border border-border/40 shadow-sm">
+                <Card key={i} className="rounded-2xl border border-border/40 shadow-sm bg-background">
                   <CardContent className="p-4">
                     <Skeleton className="h-4 w-20 rounded-md mb-2" />
                     <Skeleton className="h-7 w-32 rounded-md" />
@@ -53,7 +43,7 @@ export default function DashboardLoading() {
               ))}
             </div>
 
-            <Card className="rounded-2xl border border-border/40 shadow-sm p-6">
+            <Card className="rounded-2xl border border-border/40 shadow-sm p-6 bg-background">
               <Skeleton className="h-6 w-32 rounded-md mb-4" />
               <div className="space-y-4">
                 {[1, 2, 3, 4].map((i) => (
@@ -71,9 +61,7 @@ export default function DashboardLoading() {
             <div className="min-h-[400px]">
               <Skeleton className="h-full w-full rounded-2xl" />
             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </motion.div>
     </div>
   );
 }

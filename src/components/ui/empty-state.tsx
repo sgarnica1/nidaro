@@ -1,13 +1,20 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { LucideIcon, ArrowRight } from "lucide-react";
+import { LucideIcon, ArrowRight, Receipt, Wallet, Tags, BookTemplate } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+const iconMap: Record<string, LucideIcon> = {
+  receipt: Receipt,
+  wallet: Wallet,
+  tags: Tags,
+  bookTemplate: BookTemplate,
+};
+
 type Props = {
-  icon: LucideIcon;
+  icon: LucideIcon | string;
   title: string;
   description: string;
   action?: {
@@ -23,13 +30,14 @@ type Props = {
 };
 
 export function EmptyState({
-  icon: Icon,
+  icon,
   title,
   description,
   action,
   secondaryAction,
   className,
 }: Props) {
+  const Icon = typeof icon === "string" ? iconMap[icon] || Receipt : icon;
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}

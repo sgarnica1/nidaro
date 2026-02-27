@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -48,27 +47,21 @@ export function FamilyGroupCard({ group, currentUserId }: Props) {
   async function onInvite({ email }: { email: string }) {
     const result = await inviteMemberByEmail(group.id, email);
     if (result.success) {
-      toast.success("Miembro agregado");
       setInviteOpen(false);
       form.reset();
     } else {
-      toast.error(result.error);
     }
   }
 
   function handleRemove(memberId: string) {
     startTransition(async () => {
       const result = await removeMember(group.id, memberId);
-      if (result.success) toast.success("Miembro removido");
-      else toast.error(result.error);
     });
   }
 
   function handleLeave() {
     startTransition(async () => {
       const result = await leaveFamilyGroup(group.id);
-      if (result.success) toast.success("Saliste del grupo");
-      else toast.error(result.error);
     });
   }
 
@@ -76,8 +69,6 @@ export function FamilyGroupCard({ group, currentUserId }: Props) {
     setDeleteOpen(false);
     startTransition(async () => {
       const result = await deleteFamilyGroup(group.id);
-      if (result.success) toast.success("Grupo eliminado");
-      else toast.error(result.error);
     });
   }
 

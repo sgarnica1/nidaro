@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { toast } from "sonner";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { CalendarIcon } from "lucide-react";
@@ -88,12 +87,9 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
       : await createExpense(values);
 
     if (result.success) {
-      if (expense) toast.success("Gasto actualizado");
       setOpen(false);
       form.reset({ ...form.getValues(), name: "", amount: 0, date: todayString() });
       onClose?.();
-    } else {
-      toast.error(result.error);
     }
   }
 

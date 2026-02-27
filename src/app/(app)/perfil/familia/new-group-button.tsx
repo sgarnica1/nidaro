@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { toast } from "sonner";
 import { Plus } from "lucide-react";
 import {
   Form,
@@ -28,11 +27,8 @@ export function NewGroupButton() {
   async function onSubmit({ name }: { name: string }) {
     const result = await createFamilyGroup(name);
     if (result.success) {
-      toast.success("Grupo creado");
       setOpen(false);
       form.reset();
-    } else {
-      toast.error(result.error);
     }
   }
 
@@ -45,7 +41,7 @@ export function NewGroupButton() {
 
       <Button
         size="icon"
-        className="fixed bottom-28 right-4 h-14 w-14 rounded-full shadow-lg md:hidden z-[60] bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-200"
+        className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg md:hidden z-[60] bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-200"
         onClick={() => setOpen(true)}
       >
         <Plus className="h-6 w-6" />
