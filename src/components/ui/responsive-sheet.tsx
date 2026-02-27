@@ -59,7 +59,7 @@ export function ResponsiveSheet({ open, onOpenChange, title, trigger, children }
           // The Sheet will close on the next escape press if combobox is already closed
         }}
       >
-        <SheetHeader className="mb-4 p-0">
+        <SheetHeader className="mb-4 p-0 md:pt-4">
           <SheetTitle>{title}</SheetTitle>
         </SheetHeader>
         {children}

@@ -99,25 +99,25 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card>
-          <CardContent className="py-4">
+          <CardContent className='px-4'>
             <p className="text-xs text-muted-foreground">Ingreso disponible</p>
             <p className="text-xl font-semibold mt-1">{formatCurrency(available)}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="py-4">
+          <CardContent className='px-4'>
             <p className="text-xs text-muted-foreground">Planeado</p>
             <p className="text-xl font-semibold mt-1">{formatCurrency(totalPlanned)}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="py-4">
+          <CardContent className='px-4'>
             <p className="text-xs text-muted-foreground">Real</p>
             <p className="text-xl font-semibold mt-1">{formatCurrency(totalReal)}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="py-4">
+          <CardContent className='px-4'>
             <p className="text-xs text-muted-foreground">Restante</p>
             <p className={`text-xl font-semibold mt-1 ${remaining < 0 ? "text-destructive" : "text-green-600"}`}>
               {formatCurrency(remaining)}
