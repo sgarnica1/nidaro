@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { motion } from "framer-motion";
 import { LayoutDashboard, Receipt, BookTemplate, Wallet, User } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { NavItem } from "@/types";
@@ -18,7 +19,12 @@ export function MobileNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-white/80 backdrop-blur-md md:hidden">
+    <motion.nav
+      initial={{ y: 100, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ duration: 0.3, ease: "easeOut" }}
+      className="fixed bottom-4 left-4 right-4 z-50 rounded-2xl border border-border/30 bg-white/70 backdrop-blur-3xl shadow-xl md:hidden"
+    >
       <div className="flex h-16 items-center justify-around px-2">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -30,16 +36,21 @@ export function MobileNav() {
               className={cn(
                 "flex flex-col items-center gap-1 rounded-lg px-3 py-2 text-xs transition-all duration-200",
                 isActive
-                  ? "text-primary font-medium scale-105"
+                  ? "text-primary font-medium"
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
-              <Icon className={cn("h-5 w-5 transition-transform duration-200", isActive && "text-primary scale-110")} />
+              <motion.div
+                animate={{ scale: isActive ? 1.1 : 1 }}
+                transition={{ type: "spring", stiffness: 500, damping: 30 }}
+              >
+                <Icon className={cn("h-5 w-5 transition-colors duration-200", isActive && "text-primary")} />
+              </motion.div>
               <span>{item.label}</span>
             </Link>
           );
         })}
       </div>
-    </nav>
+    </motion.nav>
   );
 }

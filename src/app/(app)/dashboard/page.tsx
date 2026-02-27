@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Receipt } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { getActiveBudget, getBudgets, getBudgetById } from "@/lib/actions/budgets";
 import { getExpensesByBudget } from "@/lib/actions/expenses";
@@ -75,16 +76,15 @@ export default async function DashboardPage({
           <h1 className="text-2xl font-semibold">Dashboard</h1>
           <p className="text-sm text-muted-foreground">Tu centro de control financiero</p>
         </div>
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center gap-4">
-            <p className="text-muted-foreground text-lg">Presupuesto no encontrado</p>
-            <Button asChild>
-              <Link href="/dashboard">
-                Ver presupuesto activo
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Receipt}
+          title="Presupuesto no encontrado"
+          description="El presupuesto que buscas no está disponible. Regresa al dashboard para ver tu presupuesto activo."
+          action={{
+            label: "Ver presupuesto activo",
+            href: "/dashboard",
+          }}
+        />
       </div>
     );
   }
@@ -98,20 +98,15 @@ export default async function DashboardPage({
           <h1 className="text-2xl font-semibold">Dashboard</h1>
           <p className="text-sm text-muted-foreground">Tu centro de control financiero</p>
         </div>
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center gap-4">
-            <p className="text-muted-foreground text-lg">No tienes un presupuesto activo</p>
-            <p className="text-sm text-muted-foreground">
-              Crea un presupuesto para empezar a controlar tus gastos.
-            </p>
-            <Button asChild>
-              <Link href="/presupuestos/nuevo">
-                <Plus className="h-4 w-4 mr-2" />
-                Crear presupuesto
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Receipt}
+          title="Empieza tu primer presupuesto"
+          description="Organiza tus gastos y toma el control de tu dinero este mes."
+          action={{
+            label: "Crear mi presupuesto",
+            href: "/presupuestos/nuevo",
+          }}
+        />
       </div>
     );
   }
@@ -189,19 +184,19 @@ export default async function DashboardPage({
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <Card className="rounded-2xl border border-border/40 shadow-sm hover:shadow-md transition-shadow duration-300">
-          <CardContent className="p-4">
+          <CardContent>
             <p className="text-sm text-muted-foreground">Planeado</p>
             <p className="text-2xl font-semibold tracking-tight mt-1">{formatCurrency(totalPlanned)}</p>
           </CardContent>
         </Card>
         <Card className="rounded-2xl border border-border/40 shadow-sm hover:shadow-md transition-shadow duration-300">
-          <CardContent className="p-4">
+          <CardContent>
             <p className="text-sm text-muted-foreground">Real</p>
             <p className="text-2xl font-semibold tracking-tight mt-1">{formatCurrency(totalReal)}</p>
           </CardContent>
         </Card>
         <Card className="rounded-2xl border border-border/40 shadow-sm hover:shadow-md transition-shadow duration-300">
-          <CardContent className="p-4">
+          <CardContent>
             <p className="text-sm text-muted-foreground">Restante</p>
             <p className={`text-2xl font-semibold tracking-tight mt-1 ${remaining < 0 ? "text-red-600" : "text-emerald-600"}`}>
               {formatCurrency(remaining)}
@@ -265,7 +260,7 @@ export default async function DashboardPage({
       >
         <Button
           size="icon"
-          className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg md:hidden z-40 bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-200"
+          className="fixed bottom-28 right-4 h-14 w-14 rounded-full shadow-lg md:hidden z-[60] bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-200"
         >
           <Plus className="h-6 w-6" />
         </Button>

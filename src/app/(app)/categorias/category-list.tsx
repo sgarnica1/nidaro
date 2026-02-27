@@ -2,10 +2,11 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, Tags } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EmptyState } from "@/components/ui/empty-state";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,6 +39,7 @@ import {
 type Props = {
   categories: ExpenseCategoryWithRelations[];
   budgetCategories: BudgetCategoryWithSubs[];
+  onAddCategory?: () => void;
 };
 
 type SubGroup = {
@@ -213,21 +215,21 @@ function TabContent({
               {mobileActionCat?.name}
             </SheetTitle>
           </SheetHeader>
-          <div className="space-y-1">
+          <div className="space-y-2">
             <Button
               variant="ghost"
-              className="w-full justify-start gap-3"
+              className="w-full justify-start gap-3 h-12 text-base"
               onClick={handleMobileEdit}
             >
-              <Pencil className="h-4 w-4" />
+              <Pencil className="h-5 w-5" />
               Editar
             </Button>
             <Button
               variant="ghost"
-              className="w-full justify-start gap-3 text-destructive hover:text-destructive"
+              className="w-full justify-start gap-3 h-12 text-base text-destructive hover:text-destructive"
               onClick={handleMobileDelete}
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-5 w-5" />
               Eliminar
             </Button>
           </div>
@@ -243,13 +245,14 @@ function TabContent({
               ¿Eliminar &quot;{deletingCat?.name}&quot;? Esta acción no se puede deshacer.
             </DialogDescription>
           </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeletingCat(null)}>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" className="h-12 text-base flex-1" onClick={() => setDeletingCat(null)}>
               Cancelar
             </Button>
             <Button
               variant="destructive"
               disabled={pending}
+              className="h-12 text-base flex-1"
               onClick={() => deletingCat && handleDelete(deletingCat.id)}
             >
               Eliminar
@@ -261,17 +264,22 @@ function TabContent({
   );
 }
 
-export function CategoryList({ categories, budgetCategories }: Props) {
+export function CategoryList({ categories, budgetCategories, onAddCategory }: Props) {
   if (categories.length === 0) {
     return (
-      <Card>
-        <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-          <p className="text-muted-foreground">No tienes categorías de gastos aún.</p>
-          <p className="text-sm text-muted-foreground mt-1">
-            Crea tu primera categoría para empezar a organizar tus gastos.
-          </p>
-        </CardContent>
-      </Card>
+      <EmptyState
+        icon={Tags}
+        title="Crea tu primera categoría"
+        description="Organiza tus gastos en categorías personalizadas para tener un mejor control de tus finanzas."
+        action={
+          onAddCategory
+            ? {
+                label: "Crear categoría",
+                onClick: onAddCategory,
+              }
+            : undefined
+        }
+      />
     );
   }
 

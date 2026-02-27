@@ -55,7 +55,7 @@ export function NewTemplateSheet({ open, onOpenChange }: Props) {
               </FormItem>
             )}
           />
-          <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>
+          <Button type="submit" className="w-full h-12 text-base" disabled={form.formState.isSubmitting}>
             {form.formState.isSubmitting ? "Creando..." : "Crear"}
           </Button>
         </form>

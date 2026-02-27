@@ -158,8 +158,8 @@ export function BudgetExpensePlanForm({
             )}
           />
 
-          <div className="flex flex-col gap-2 pt-4 sticky bottom-0 bg-background border-t -mx-4 -mb-4 px-4 pb-4 mt-auto">
-            <Button type="submit" disabled={pending} className="w-full">
+          <div className="flex flex-col gap-3 pt-4 sticky bottom-0 bg-background border-t -mx-4 -mb-4 px-4 pb-4 mt-auto">
+            <Button type="submit" disabled={pending} className="w-full h-12 text-base">
               {pending ? "Agregando..." : "Agregar"}
             </Button>
           </div>
