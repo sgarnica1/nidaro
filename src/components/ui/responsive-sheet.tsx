@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { useIsMobile } from "@/hooks/use-is-mobile";
 import {
   Sheet,
@@ -20,16 +21,20 @@ type Props = {
 export function ResponsiveSheet({ open, onOpenChange, title, trigger, children }: Props) {
   const isMobile = useIsMobile();
 
+  const contentClassName = useMemo(
+    () =>
+      isMobile
+        ? "max-h-[85dvh] min-h-[50dvh] overflow-y-auto rounded-t-2xl border-t px-4 pt-6 pb-6 safe-area-inset-bottom"
+        : "overflow-y-auto w-[400px] sm:w-[440px] px-6",
+    [isMobile]
+  );
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       {trigger && <SheetTrigger asChild>{trigger}</SheetTrigger>}
       <SheetContent
         side={isMobile ? "bottom" : "right"}
-        className={
-          isMobile
-            ? "max-h-[90vh] overflow-y-auto rounded-t-2xl border-t px-4 pt-6 pb-6"
-            : "overflow-y-auto w-[400px] sm:w-[440px] px-6"
-        }
+        className={contentClassName}
         onInteractOutside={(e) => {
           const target = e.target as HTMLElement;
           let element: HTMLElement | null = target;
