@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { cn } from "@/lib/utils";
@@ -43,27 +44,28 @@ function formatCurrency(amount: number) {
 export function BudgetTable({ budget, expenses, categoryPercentages }: Props) {
   const available = budget.totalIncome;
 
-  const realByCategory: Record<string, number> = {};
-  for (const exp of expenses) {
-    const catId = exp.expenseCategory.budgetCategory.id;
-    realByCategory[catId] = (realByCategory[catId] ?? 0) + exp.amount;
-  }
+  const { rows, chartData } = useMemo(() => {
+    const realByCategory: Record<string, number> = {};
+    for (const exp of expenses) {
+      const catId = exp.expenseCategory.budgetCategory.id;
+      realByCategory[catId] = (realByCategory[catId] ?? 0) + exp.amount;
+    }
 
-  const plannedByCategory: Record<string, number> = {};
-  for (const plan of budget.expensePlans) {
-    const catId = plan.expenseCategory.budgetCategory.id;
-    plannedByCategory[catId] = (plannedByCategory[catId] ?? 0) + plan.plannedAmount;
-  }
+    const plannedByCategory: Record<string, number> = {};
+    for (const plan of budget.expensePlans) {
+      const catId = plan.expenseCategory.budgetCategory.id;
+      plannedByCategory[catId] = (plannedByCategory[catId] ?? 0) + plan.plannedAmount;
+    }
 
-  const categoryIds = Array.from(
-    new Set([
-      ...Object.keys(categoryPercentages),
-      ...Object.keys(realByCategory),
-      ...Object.keys(plannedByCategory),
-    ])
-  );
+    const categoryIds = Array.from(
+      new Set([
+        ...Object.keys(categoryPercentages),
+        ...Object.keys(realByCategory),
+        ...Object.keys(plannedByCategory),
+      ])
+    );
 
-  const rows: CategoryRow[] = categoryIds.map((catId) => {
+    const rows: CategoryRow[] = categoryIds.map((catId) => {
     const assignedPct = categoryPercentages[catId] ?? 0;
     const assignedAmount = (available * assignedPct) / 100;
     const plannedAmount = plannedByCategory[catId] ?? 0;
@@ -87,9 +89,19 @@ export function BudgetTable({ budget, expenses, categoryPercentages }: Props) {
   for (const exp of expenses) {
     catNameMap[exp.expenseCategory.budgetCategory.id] = exp.expenseCategory.budgetCategory.name;
   }
-  for (const row of rows) {
-    row.categoryName = catNameMap[row.categoryId] ?? row.categoryId;
-  }
+    for (const row of rows) {
+      row.categoryName = catNameMap[row.categoryId] ?? row.categoryId;
+    }
+
+    const chartData = rows.map((row) => ({
+      name: row.categoryName,
+      assigned: row.assignedAmount,
+      planned: row.plannedAmount,
+      real: row.realAmount,
+    }));
+
+    return { rows, chartData };
+  }, [budget, expenses, categoryPercentages, available]);
 
   return (
     <div className="space-y-6">
@@ -133,14 +145,7 @@ export function BudgetTable({ budget, expenses, categoryPercentages }: Props) {
         </Table>
       </div>
 
-      <BudgetChart
-        categories={rows.map((row) => ({
-          name: row.categoryName,
-          assigned: row.assignedAmount,
-          planned: row.plannedAmount,
-          real: row.realAmount,
-        }))}
-      />
+      <BudgetChart categories={chartData} />
     </div>
   );
 }

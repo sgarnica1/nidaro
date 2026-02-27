@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, unstable_cache } from "next/cache";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/current-user";
@@ -24,8 +24,27 @@ export type ExpenseWithCategory = Omit<Expense, "amount"> & {
 
 export async function getExpensesByBudget(budgetId: string): Promise<ExpenseWithCategory[]> {
   const user = await getCurrentUser();
+  
+  if (process.env.NODE_ENV === "production") {
+    return getExpensesByBudgetCached(budgetId, user.id);
+  }
+  
+  return getExpensesByBudgetUncached(budgetId, user.id);
+}
+
+async function getExpensesByBudgetCached(budgetId: string, userId: string): Promise<ExpenseWithCategory[]> {
+  return unstable_cache(
+    async () => {
+      return getExpensesByBudgetUncached(budgetId, userId);
+    },
+    [`expenses-${budgetId}-${userId}`],
+    { revalidate: 10, tags: [`expenses-${budgetId}`] }
+  )();
+}
+
+async function getExpensesByBudgetUncached(budgetId: string, userId: string): Promise<ExpenseWithCategory[]> {
   const rows = await prisma.expense.findMany({
-    where: { budgetId, userId: user.id },
+    where: { budgetId, userId },
     include: { expenseCategory: { include: { budgetCategory: true } } },
     orderBy: { date: "desc" },
   });
@@ -95,9 +114,13 @@ export async function updateExpense(
 export async function deleteExpense(id: string): Promise<ActionResult> {
   try {
     const user = await getCurrentUser();
+    const expense = await prisma.expense.findUnique({ where: { id, userId: user.id }, select: { budgetId: true } });
     await prisma.expense.delete({ where: { id, userId: user.id } });
     revalidatePath("/dashboard");
     revalidatePath("/gastos");
+    if (expense) {
+      revalidatePath(`/gastos?budgetId=${expense.budgetId}`);
+    }
     return { success: true, data: undefined };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Error desconocido" };

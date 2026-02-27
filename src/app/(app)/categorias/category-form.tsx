@@ -194,7 +194,7 @@ export function CategoryForm({ budgetCategories, expenseCategory, defaultCategor
               <FormItem>
                 <FormLabel>Color</FormLabel>
                 <FormControl>
-                  <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-none">
+                  <div className="flex gap-2.5 overflow-x-auto px-2 py-5 scrollbar-none">
                     {EXPENSE_COLORS.map((color) => (
                       <button
                         key={color.value}

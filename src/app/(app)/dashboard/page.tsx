@@ -49,13 +49,36 @@ export default async function DashboardPage() {
 
   const expenses = await getExpensesByBudget(budget.id);
   const available = budget.totalIncome;
-  const totalReal = expenses.reduce((sum, e) => sum + Number(e.amount), 0);
+  const totalReal = expenses.reduce((sum, e) => sum + e.amount, 0);
   const totalPlanned = budget.totalPlanned;
   const remaining = available - totalReal;
 
   const categoryPercentages: Record<string, number> = Object.fromEntries(
     categories.map((c) => [c.id, c.userPercentage])
   );
+
+  const budgetData = {
+    totalIncome: available,
+    expensePlans: budget.expensePlans.map((p) => ({
+      plannedAmount: p.plannedAmount,
+      expenseCategory: {
+        budgetCategory: {
+          id: p.expenseCategory.budgetCategory.id,
+          name: p.expenseCategory.budgetCategory.name,
+        },
+      },
+    })),
+  };
+
+  const expensesData = expenses.map((e) => ({
+    amount: e.amount,
+    expenseCategory: {
+      budgetCategory: {
+        id: e.expenseCategory.budgetCategory.id,
+        name: e.expenseCategory.budgetCategory.name,
+      },
+    },
+  }));
 
   return (
     <div className="space-y-6">
@@ -105,27 +128,8 @@ export default async function DashboardPage() {
       </div>
 
       <BudgetTable
-        budget={{
-          totalIncome: available,
-          expensePlans: budget.expensePlans.map((p) => ({
-            plannedAmount: p.plannedAmount,
-            expenseCategory: {
-              budgetCategory: {
-                id: p.expenseCategory.budgetCategory.id,
-                name: p.expenseCategory.budgetCategory.name,
-              },
-            },
-          })),
-        }}
-        expenses={expenses.map((e) => ({
-          amount: Number(e.amount),
-          expenseCategory: {
-            budgetCategory: {
-              id: e.expenseCategory.budgetCategory.id,
-              name: e.expenseCategory.budgetCategory.name,
-            },
-          },
-        }))}
+        budget={budgetData}
+        expenses={expensesData}
         categoryPercentages={categoryPercentages}
       />
     </div>

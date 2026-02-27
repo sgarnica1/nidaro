@@ -11,6 +11,9 @@ const withPWA = withPWAInit({
 
 const nextConfig: NextConfig = {
   turbopack: {},
+  experimental: {
+    optimizePackageImports: ["lucide-react"],
+  },
 };
 
 export default withPWA(nextConfig);

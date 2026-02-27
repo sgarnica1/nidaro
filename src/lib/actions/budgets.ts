@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, unstable_cache } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
@@ -58,10 +58,74 @@ export async function getBudgets(): Promise<SerializedBudget[]> {
 
 export async function getActiveBudget(): Promise<BudgetWithDetails | null> {
   const user = await getCurrentUser();
+
+  if (process.env.NODE_ENV === "production") {
+    return getActiveBudgetCached(user.id);
+  }
+
   const today = new Date();
   const budget = await prisma.budget.findFirst({
     where: {
       userId: user.id,
+      startDate: { lte: today },
+      endDate: { gte: today },
+    },
+    include: {
+      incomes: { include: { incomeSource: { select: { name: true, amount: true } } } },
+      deductions: true,
+      expensePlans: {
+        include: { expenseCategory: { include: { budgetCategory: true } } },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  if (!budget) return null;
+
+  return {
+    ...budget,
+    totalIncome: Number(budget.totalIncome),
+    totalPlanned: Number(budget.totalPlanned),
+    incomes: budget.incomes.map((inc) => ({
+      ...inc,
+      incomeSource: {
+        ...inc.incomeSource,
+        amount: Number(inc.incomeSource.amount),
+      },
+    })),
+    deductions: budget.deductions.map((d) => ({
+      ...d,
+      value: Number(d.value),
+    })),
+    expensePlans: budget.expensePlans.map((p) => ({
+      ...p,
+      plannedAmount: Number(p.plannedAmount),
+      expenseCategory: {
+        ...p.expenseCategory,
+        budgetCategory: {
+          ...p.expenseCategory.budgetCategory,
+          defaultPercentage: Number(p.expenseCategory.budgetCategory.defaultPercentage),
+        },
+      },
+    })),
+  };
+}
+
+async function getActiveBudgetCached(userId: string): Promise<BudgetWithDetails | null> {
+  return unstable_cache(
+    async () => {
+      return getActiveBudgetUncached(userId);
+    },
+    [`active-budget-${userId}`],
+    { revalidate: 30, tags: [`budget-${userId}`] }
+  )();
+}
+
+async function getActiveBudgetUncached(userId: string): Promise<BudgetWithDetails | null> {
+  const today = new Date();
+  const budget = await prisma.budget.findFirst({
+    where: {
+      userId,
       startDate: { lte: today },
       endDate: { gte: today },
     },
