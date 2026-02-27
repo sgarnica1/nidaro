@@ -12,11 +12,11 @@ export function TemplateInfoSheet() {
           <Info className="h-4 w-4" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="bottom" className="rounded-t-2xl">
+      <SheetContent side="bottom" className="rounded-t-2xl gap-0">
         <SheetHeader>
           <SheetTitle className="text-[18px] font-bold">¿Qué son las plantillas?</SheetTitle>
         </SheetHeader>
-        <div className="mt-6 space-y-4 text-[15px] text-[#6B7280] leading-relaxed">
+        <div className="pb-6 space-y-4 text-[15px] text-[#6B7280] leading-relaxed px-6">
           <p>
             Las plantillas te permiten guardar estructuras de presupuesto reutilizables. Una vez que creas una plantilla con tus categorías y montos, puedes usarla para crear nuevos presupuestos mensuales rápidamente.
           </p>

@@ -19,6 +19,7 @@ const navItems: NavItem[] = [
 export function MobileNav() {
   const pathname = usePathname();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const isWizardOpen = pathname === "/presupuestos/nuevo";
 
   useEffect(() => {
     const checkSheetOpen = () => {
@@ -45,7 +46,7 @@ export function MobileNav() {
       transition={{ duration: 0.3, ease: "easeOut" }}
       className={cn(
         "fixed bottom-4 left-4 right-4 z-50 rounded-2xl border border-border/30 bg-white/70 backdrop-blur-3xl shadow-xl md:hidden",
-        isSheetOpen && "hidden"
+        (isSheetOpen || isWizardOpen) && "hidden"
       )}
     >
       <div className="flex h-16 items-center justify-around px-2">

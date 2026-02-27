@@ -8,6 +8,7 @@ import { BudgetHealthSummary } from "./budget-health-summary";
 import { UnifiedCategoryCard } from "./unified-category-card";
 import { RecentExpensesPreview } from "./recent-expenses-preview";
 import { MonthlyExpensesSheet } from "@/app/(app)/gastos/monthly-expenses-sheet";
+import { NewBudgetFAB } from "./new-budget-fab";
 import type { ExpenseWithCategory } from "@/lib/actions/expenses";
 import type { ExpenseCategoryWithRelations } from "@/lib/actions/expense-categories";
 
@@ -170,6 +171,8 @@ export function DashboardPageClient({
         budgetId={budgetId}
         totalIncome={totalIncome}
       />
+
+      <NewBudgetFAB />
     </div>
   );
 }

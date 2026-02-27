@@ -1,46 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, ChevronRight } from "lucide-react";
+import { toast } from "sonner";
 import { ResponsiveSheet } from "@/components/ui/responsive-sheet";
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
-  FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Combobox,
-  ComboboxContent,
-  ComboboxEmpty,
-  ComboboxInput,
-  ComboboxItem,
-  ComboboxList,
-} from "@/components/ui/combobox";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { createExpense, updateExpense } from "@/lib/actions/expenses";
 import type { ExpenseCategoryWithRelations } from "@/lib/actions/expense-categories";
 import type { ExpenseWithCategory } from "@/lib/actions/expenses";
+import { CategoryPickerSheet } from "./category-picker-sheet";
 
 const schema = z.object({
   budgetId: z.string().min(1),
   expenseCategoryId: z.string().min(1, "Selecciona una categoría"),
-  name: z.string().min(1, "El nombre es requerido"),
+  name: z.string().optional(),
   amount: z.coerce.number().positive("El monto debe ser positivo"),
   date: z.string().min(1, "La fecha es requerida"),
 });
@@ -69,6 +62,11 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
     onOpenChange?.(val);
   };
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
+  const [amountError, setAmountError] = useState(false);
+  const [categoryError, setCategoryError] = useState(false);
+  const [amountFocused, setAmountFocused] = useState(false);
+  const amountInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<FormValues, unknown, FormValues>({
     resolver: zodResolver(schema) as never,
@@ -81,7 +79,33 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
     },
   });
 
+  const amount = form.watch("amount");
+  const selectedCategoryId = form.watch("expenseCategoryId");
+  const selectedCategory = expenseCategories.find((c) => c.id === selectedCategoryId);
+  const topCategories = expenseCategories.slice(0, 6);
+
+  useEffect(() => {
+    if (open && !expense) {
+      setTimeout(() => {
+        amountInputRef.current?.focus();
+      }, 100);
+    }
+  }, [open, expense]);
+
   async function onSubmit(values: FormValues) {
+    if (values.amount === 0 || values.amount <= 0) {
+      setAmountError(true);
+      amountInputRef.current?.focus();
+      setTimeout(() => setAmountError(false), 2000);
+      return;
+    }
+
+    if (!values.expenseCategoryId) {
+      setCategoryError(true);
+      setTimeout(() => setCategoryError(false), 1000);
+      return;
+    }
+
     const result = expense
       ? await updateExpense(expense.id, values)
       : await createExpense(values);
@@ -90,140 +114,232 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
       setOpen(false);
       form.reset({ ...form.getValues(), name: "", amount: 0, date: todayString() });
       onClose?.();
+      toast.success("Gasto guardado", {
+        duration: 2500,
+        style: {
+          backgroundColor: "#10B981",
+          color: "white",
+        },
+      });
     }
   }
 
+  const dateValue = form.watch("date") ? new Date(form.watch("date") + "T12:00:00") : undefined;
+  const formattedDate = dateValue ? format(dateValue, "d MMM yyyy", { locale: es }) : "Selecciona fecha";
+  const displayAmount = amount > 0 ? amount.toFixed(2) : "";
+
   return (
-    <ResponsiveSheet
-      open={open}
-      onOpenChange={setOpen}
-      title={expense ? "Editar gasto" : "Nuevo gasto"}
-      trigger={children}
-    >
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
-          <div className="flex-1 overflow-y-auto space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+    <>
+      <ResponsiveSheet
+        open={open}
+        onOpenChange={setOpen}
+        title={expense ? "Editar gasto" : "Nuevo gasto"}
+        trigger={children}
+      >
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
+            <div className="flex-1 overflow-y-auto">
+              <div className="pt-5 pb-4">
+                <FormField
+                  control={form.control}
+                  name="amount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <div className="relative">
+                          <div className="flex items-center justify-center">
+                            <span className="text-[24px] text-[#6B7280] mr-2">$</span>
+                            <input
+                              ref={amountInputRef}
+                              type="number"
+                              inputMode="decimal"
+                              step="0.01"
+                              min="0"
+                              placeholder="$0"
+                              value={displayAmount}
+                              onFocus={() => setAmountFocused(true)}
+                              onBlur={() => setAmountFocused(false)}
+                              onChange={(e) => {
+                                const val = e.target.value === "" ? 0 : parseFloat(e.target.value) || 0;
+                                field.onChange(val);
+                                setAmountError(false);
+                              }}
+                              className={cn(
+                                "w-full text-center text-[42px] font-bold bg-transparent border-none outline-none focus:outline-none",
+                                "placeholder:text-[#D1D5DB] placeholder:text-[42px]",
+                                amountError ? "text-[#DC2626] animate-[shake_0.5s]" : amountFocused ? "text-[#1C3D2E]" : "text-[#111111]",
+                                "transition-colors"
+                              )}
+                            />
+                            <span className="text-[12px] text-[#6B7280] ml-2 mt-2">MXN</span>
+                          </div>
+                          <div
+                            className={cn(
+                              "absolute bottom-0 left-0 right-0 h-[2px] transition-transform duration-300 origin-center",
+                              amountError
+                                ? "bg-[#DC2626] scale-x-100"
+                                : amount > 0 || amountFocused
+                                ? "bg-[#1C3D2E] scale-x-100"
+                                : "bg-[#1C3D2E] scale-x-0"
+                            )}
+                          />
+                        </div>
+                      </FormControl>
+                      {amountError && (
+                        <p className="text-[12px] text-[#DC2626] text-center mt-2">Ingresa un monto</p>
+                      )}
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="h-[1px] bg-[#F3F4F6]" />
+
               <FormField
                 control={form.control}
                 name="date"
                 render={({ field }) => {
-                  const dateValue = field.value ? new Date(field.value + "T12:00:00") : undefined;
                   return (
                     <FormItem>
-                      <FormLabel>Fecha</FormLabel>
-                      <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              className={cn(
-                                "w-full justify-start text-left font-normal",
-                                !field.value && "text-muted-foreground"
-                              )}
+                      <FormControl>
+                        <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                          <PopoverTrigger asChild>
+                            <button
+                              type="button"
+                              className="w-full h-[52px] flex items-center px-4 border-b border-[#F3F4F6]"
                             >
-                              <CalendarIcon className="mr-2 h-4 w-4" />
-                              {dateValue
-                                ? format(dateValue, "d MMM yyyy", { locale: es })
-                                : "Selecciona"}
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0 z-[200]" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={dateValue}
-                            onSelect={(day) => {
-                              if (day) {
-                                field.onChange(day.toISOString().split("T")[0]);
-                                setCalendarOpen(false);
-                              }
-                            }}
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
+                              <CalendarIcon className="h-5 w-5 text-[#1C3D2E] mr-3" />
+                              <span className="flex-1 text-left text-[15px] font-medium text-[#111111]">
+                                {formattedDate}
+                              </span>
+                              <ChevronRight className="h-5 w-5 text-[#6B7280]" />
+                            </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0 z-200" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={dateValue}
+                              onSelect={(day) => {
+                                if (day) {
+                                  field.onChange(day.toISOString().split("T")[0]);
+                                  setCalendarOpen(false);
+                                }
+                              }}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   );
                 }}
               />
-              <FormField
-                control={form.control}
-                name="amount"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Monto</FormLabel>
-                    <FormControl><Input type="number" step="0.01" placeholder="0.00" {...field} /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+
+              <div className="h-[1px] bg-[#F3F4F6]" />
+
+              <div className="px-4 py-3">
+                <p className="text-[11px] uppercase text-[#6B7280] mb-3">Categoría</p>
+                <div
+                  className={cn(
+                    "flex gap-2 overflow-x-auto pb-2 -mx-4 px-4",
+                    categoryError && "bg-[#FEF3C7] rounded-lg p-2 transition-colors"
+                  )}
+                  style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                >
+                  {topCategories.map((cat) => {
+                    const isSelected = selectedCategoryId === cat.id;
+                    return (
+                      <button
+                        key={cat.id}
+                        type="button"
+                        onClick={() => {
+                          form.setValue("expenseCategoryId", cat.id);
+                          setCategoryError(false);
+                        }}
+                        className={cn(
+                          "h-9 px-3 rounded-full flex items-center gap-2 shrink-0 transition-all",
+                          isSelected
+                            ? "border border-current"
+                            : "bg-[#F3F4F6] text-[#6B7280] border border-transparent"
+                        )}
+                        style={
+                          isSelected
+                            ? {
+                                backgroundColor: `${cat.color}20`,
+                                color: cat.color,
+                                borderColor: cat.color,
+                              }
+                            : {}
+                        }
+                      >
+                        <span className="text-sm font-medium">{cat.name}</span>
+                      </button>
+                    );
+                  })}
+                  <button
+                    type="button"
+                    onClick={() => setCategoryPickerOpen(true)}
+                    className="h-9 px-3 rounded-full bg-[#F3F4F6] text-[#6B7280] flex items-center shrink-0"
+                  >
+                    <span className="text-sm font-medium">Ver más</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className="h-[1px] bg-[#F3F4F6]" />
+
+              <div className="px-4 py-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Descripción (opcional)"
+                          className="min-h-[60px] bg-[#F8F8F6] border-none rounded-xl px-[14px] py-[14px] text-[15px] leading-[1.5] resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
-            <FormField
-              control={form.control}
-              name="expenseCategoryId"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Categoría</FormLabel>
-                  <Combobox
-                    items={expenseCategories.map((c) => c.id)}
-                    value={field.value || null}
-                    onValueChange={(id: string | null) => { if (id) field.onChange(id); }}
-                    itemToStringLabel={(id: string) => expenseCategories.find((c) => c.id === id)?.name ?? ""}
-                    itemToStringValue={(id: string) => expenseCategories.find((c) => c.id === id)?.name ?? ""}
-                  >
-                    <ComboboxInput placeholder="Buscar categoría..." showClear className="w-full" />
-                    <ComboboxContent className="z-[200]">
-                      <ComboboxEmpty>No se encontraron categorías.</ComboboxEmpty>
-                      <ComboboxList>
-                        {(id: string) => {
-                          const cat = expenseCategories.find((c) => c.id === id);
-                          if (!cat) return null;
-                          return (
-                            <ComboboxItem key={cat.id} value={cat.id}>
-                              <div className="flex items-center gap-2">
-                                <span className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: cat.color }} />
-                                <span>{cat.name}</span>
-                                <span className="text-muted-foreground text-xs">· {cat.budgetCategory.name}</span>
-                              </div>
-                            </ComboboxItem>
-                          );
-                        }}
-                      </ComboboxList>
-                    </ComboboxContent>
-                  </Combobox>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <div className="sticky bottom-0 bg-white border-t border-[#F3F4F6] px-4 pt-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="text-sm text-[#6B7280] mb-3 block w-full text-center"
+              >
+                Cancelar
+              </button>
+              <Button
+                type="submit"
+                disabled={form.formState.isSubmitting || amount === 0 || !selectedCategoryId}
+                className="w-full h-[52px] text-base font-bold rounded-[14px] bg-[#1C3D2E] hover:bg-[#1C3D2E]/90 text-white disabled:bg-[#9CA3AF] disabled:opacity-50 active:scale-[0.98] transition-transform"
+              >
+                {form.formState.isSubmitting ? "Guardando..." : "Guardar gasto"}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </ResponsiveSheet>
 
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Descripción</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Ej: Compra supermercado..." {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-          </div>
-          <div className="sticky bottom-0 bg-background border-t pt-4 pb-4 -mx-4 px-4 mt-auto flex flex-col gap-3">
-            <Button type="submit" className="w-full h-12 text-base bg-primary hover:bg-primary/90" disabled={form.formState.isSubmitting}>
-              {form.formState.isSubmitting ? "Guardando..." : "Guardar"}
-            </Button>
-            <Button type="button" variant="outline" className="w-full h-12 text-base" onClick={() => setOpen(false)}>
-              Cancelar
-            </Button>
-          </div>
-        </form>
-      </Form>
-    </ResponsiveSheet>
+      <CategoryPickerSheet
+        open={categoryPickerOpen}
+        onOpenChange={setCategoryPickerOpen}
+        categories={expenseCategories}
+        selectedCategoryId={selectedCategoryId}
+        onSelect={(id) => {
+          form.setValue("expenseCategoryId", id);
+          setCategoryError(false);
+        }}
+      />
+    </>
   );
 }
