@@ -1,7 +1,6 @@
 "use client";
 
 import { useTransition, useState } from "react";
-import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -51,14 +50,12 @@ export function TemplateCard({
     setDeleteOpen(false);
     startTransition(async () => {
       const result = await deleteTemplate(template.id);
-      if (!result.success) toast.error(result.error);
     });
   }
 
   function handleDeleteItem(itemId: string) {
     startTransition(async () => {
       const result = await deleteTemplateItem(itemId);
-      if (!result.success) toast.error(result.error);
     });
   }
 
@@ -75,7 +72,6 @@ export function TemplateCard({
   function handleSaveAmount(itemId: string, expenseCategoryId: string) {
     const amount = parseFloat(editingAmount);
     if (isNaN(amount) || amount <= 0) {
-      toast.error("El monto debe ser un número positivo");
       handleCancelEdit();
       return;
     }
@@ -87,8 +83,6 @@ export function TemplateCard({
       });
       if (result.success) {
         handleCancelEdit();
-      } else {
-        toast.error(result.error);
       }
     });
   }

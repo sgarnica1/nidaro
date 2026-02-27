@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { toast } from "sonner";
 import { Plus, Trash2, CalendarIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -148,7 +147,6 @@ export function BudgetWizard({ incomeSources: initialSources, templates }: Props
         amount: parseFloat(newIncomeAmount),
       });
       if (!result.success) {
-        toast.error(result.error ?? "Error al agregar ingreso");
         return;
       }
       const created = result.data;
@@ -161,7 +159,6 @@ export function BudgetWizard({ incomeSources: initialSources, templates }: Props
       setNewIncomeName("");
       setNewIncomeAmount("");
       setShowIncomeForm(false);
-      toast.success(`"${created.name}" agregado y seleccionado`);
     });
   }
 
@@ -169,10 +166,8 @@ export function BudgetWizard({ incomeSources: initialSources, templates }: Props
     startTransition(async () => {
       const result = await createBudget(values);
       if (result.success) {
-        toast.success("Presupuesto creado");
         router.push("/dashboard");
       } else {
-        toast.error(result.error);
       }
     });
   }

@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { toast } from "sonner";
 import {
   Form,
   FormControl,
@@ -106,11 +105,8 @@ export function CategoryForm({ budgetCategories, expenseCategory, defaultCategor
       : await createExpenseCategory(payload);
 
     if (result.success) {
-      toast.success(expenseCategory ? "Categoría actualizada" : "Categoría creada");
       setOpen(false);
       form.reset();
-    } else {
-      toast.error(result.error);
     }
   }
 

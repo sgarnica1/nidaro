@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Plus, Receipt } from "lucide-react";
+import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -11,6 +11,7 @@ import { getExpenseCategories } from "@/lib/actions/expense-categories";
 import { BudgetTable } from "./budget-table";
 import { BudgetFilter } from "./budget-filter";
 import { BudgetCategoryCards } from "./budget-category-cards";
+import { BudgetPlanFAB } from "./budget-plan-fab";
 import { BudgetExpensePlanForm } from "./budget-expense-plan-form";
 
 function formatCurrency(amount: number) {
@@ -44,23 +45,18 @@ export default async function DashboardPage({
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold">Dashboard</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">Dashboard</h1>
           <p className="text-sm text-muted-foreground">Tu centro de control financiero</p>
         </div>
-        <Card>
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center gap-4">
-            <p className="text-muted-foreground text-lg">No tienes un presupuesto activo</p>
-            <p className="text-sm text-muted-foreground">
-              Crea un presupuesto para empezar a controlar tus gastos.
-            </p>
-            <Button asChild>
-              <Link href="/presupuestos/nuevo">
-                <Plus className="h-4 w-4 mr-2" />
-                Crear presupuesto
-              </Link>
-            </Button>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon="receipt"
+          title="Empieza tu primer presupuesto"
+          description="Organiza tus gastos y toma el control de tu dinero este mes."
+          action={{
+            label: "Crear mi presupuesto",
+            href: "/presupuestos/nuevo",
+          }}
+        />
       </div>
     );
   }
@@ -73,11 +69,11 @@ export default async function DashboardPage({
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold">Dashboard</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">Dashboard</h1>
           <p className="text-sm text-muted-foreground">Tu centro de control financiero</p>
         </div>
         <EmptyState
-          icon={Receipt}
+          icon="receipt"
           title="Presupuesto no encontrado"
           description="El presupuesto que buscas no está disponible. Regresa al dashboard para ver tu presupuesto activo."
           action={{
@@ -95,11 +91,11 @@ export default async function DashboardPage({
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold">Dashboard</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">Dashboard</h1>
           <p className="text-sm text-muted-foreground">Tu centro de control financiero</p>
         </div>
         <EmptyState
-          icon={Receipt}
+          icon="receipt"
           title="Empieza tu primer presupuesto"
           description="Organiza tus gastos y toma el control de tu dinero este mes."
           action={{
@@ -253,18 +249,11 @@ export default async function DashboardPage({
         categoryPercentages={categoryPercentages}
       />
 
-      <BudgetExpensePlanForm
+      <BudgetPlanFAB
         budgetId={budget.id}
         expenseCategories={expenseCategories}
         existingCategoryIds={budget.expensePlans.map((p) => p.expenseCategory.id)}
-      >
-        <Button
-          size="icon"
-          className="fixed bottom-28 right-4 h-14 w-14 rounded-full shadow-lg md:hidden z-[60] bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-200"
-        >
-          <Plus className="h-6 w-6" />
-        </Button>
-      </BudgetExpensePlanForm>
+      />
     </div>
   );
 }

@@ -3,7 +3,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { toast } from "sonner";
 import {
   Form,
   FormControl,
@@ -30,11 +29,8 @@ export function NewTemplateSheet({ open, onOpenChange }: Props) {
   async function onSubmit({ name }: { name: string }) {
     const result = await createTemplate(name);
     if (result.success) {
-      toast.success("Plantilla creada");
       onOpenChange(false);
       form.reset();
-    } else {
-      toast.error(result.error);
     }
   }
 

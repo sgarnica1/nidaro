@@ -4,7 +4,6 @@ import { useState, useTransition } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { toast } from "sonner";
 import { Plus, ChevronDown, ChevronUp, Loader2 } from "lucide-react";
 import {
   Form,
@@ -107,7 +106,6 @@ export function TemplateItemForm({
         categoryId: newCatBudgetId,
       });
       if (!result.success) {
-        toast.error(result.error);
         return;
       }
       const budgetCat = budgetCategories.find((b) => b.id === newCatBudgetId)!;
@@ -131,8 +129,6 @@ export function TemplateItemForm({
     if (result.success) {
       onItemAdded?.();
       handleOpenChange(false);
-    } else {
-      toast.error(result.error);
     }
   }
 

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { toast } from "sonner";
 import { MoreHorizontal, Pencil, Trash2, Tags } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -87,12 +86,7 @@ function TabContent({
   function handleDelete(id: string) {
     setDeletingCat(null);
     startTransition(async () => {
-      const result = await deleteExpenseCategory(id);
-      if (result.success) {
-        toast.success("Categoría eliminada");
-      } else {
-        toast.error(result.error);
-      }
+      await deleteExpenseCategory(id);
     });
   }
 
@@ -274,9 +268,9 @@ export function CategoryList({ categories, budgetCategories, onAddCategory }: Pr
         action={
           onAddCategory
             ? {
-                label: "Crear categoría",
-                onClick: onAddCategory,
-              }
+              label: "Crear categoría",
+              onClick: onAddCategory,
+            }
             : undefined
         }
       />

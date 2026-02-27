@@ -2,12 +2,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ExpenseList } from "./expense-list";
 import { ExpenseForm } from "./expense-form";
+import { cn } from "@/lib/utils";
 import type { ExpenseWithCategory } from "@/lib/actions/expenses";
 import type { ExpenseCategoryWithRelations } from "@/lib/actions/expense-categories";
 
@@ -106,7 +107,10 @@ export function GastosClient({ expenses, expenseCategories, budgetId, budgetOpti
         >
           <Button
             size="icon"
-            className="fixed bottom-28 right-4 h-14 w-14 rounded-full shadow-lg md:hidden z-[60] bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-200"
+            className={cn(
+              "fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg md:hidden z-[60] bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-200",
+              isFormOpen && "hidden"
+            )}
           >
             <Plus className="h-6 w-6" />
           </Button>

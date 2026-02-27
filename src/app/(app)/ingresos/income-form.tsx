@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { toast } from "sonner";
 import {
   Form,
   FormControl,
@@ -51,11 +50,8 @@ export function IncomeForm({ source, children, open: controlledOpen, onOpenChang
       : await createIncomeSource(values);
 
     if (result.success) {
-      toast.success(source ? "Ingreso actualizado" : "Ingreso agregado");
       setOpen(false);
       form.reset();
-    } else {
-      toast.error(result.error);
     }
   }
 

@@ -1,4 +1,3 @@
-import { Receipt } from "lucide-react";
 import { getBudgets } from "@/lib/actions/budgets";
 import { getExpensesByBudget } from "@/lib/actions/expenses";
 import { getExpenseCategories } from "@/lib/actions/expense-categories";
@@ -25,11 +24,11 @@ export default async function GastosPage({
 
   if (rawBudgets.length === 0) {
     return (
-      <div className="max-w-3xl mx-auto px-6 py-10 bg-[#F5F6F5] min-h-screen">
+      <div className="max-w-3xl mx-auto min-h-screen">
         <div className="space-y-6">
           <h1 className="text-3xl font-semibold tracking-tight">Gastos</h1>
           <EmptyState
-            icon={Receipt}
+            icon="receipt"
             title="Empieza tu primer presupuesto"
             description="Organiza tus gastos y toma el control de tu dinero este mes."
             action={{

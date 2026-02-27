@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { toast } from "sonner";
 import { Plus, Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
@@ -44,9 +43,7 @@ export function StructureEditor({ categories }: Props) {
       }));
       const result = await updateCategoryPercentages(data);
       if (result.success) {
-        toast.success("Estructura actualizada");
       } else {
-        toast.error(result.error);
       }
     });
   }
@@ -62,9 +59,7 @@ export function StructureEditor({ categories }: Props) {
           [categoryId]: [...(prev[categoryId] ?? []), result.data],
         }));
         setNewSubName((prev) => ({ ...prev, [categoryId]: "" }));
-        toast.success("Subcategoría creada");
       } else {
-        toast.error(result.error);
       }
     });
   }
@@ -77,9 +72,7 @@ export function StructureEditor({ categories }: Props) {
           ...prev,
           [categoryId]: prev[categoryId].filter((s) => s.id !== subId),
         }));
-        toast.success("Subcategoría eliminada");
       } else {
-        toast.error(result.error);
       }
     });
   }

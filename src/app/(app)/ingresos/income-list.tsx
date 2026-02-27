@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { toast } from "sonner";
 import { MoreVertical, Pencil, Trash2, Wallet } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -51,20 +50,14 @@ export function IncomeList({ sources, onAddIncome }: Props) {
 
   function handleToggle(id: string) {
     startTransition(async () => {
-      const result = await toggleIncomeSource(id);
-      if (!result.success) toast.error(result.error);
+      await toggleIncomeSource(id);
     });
   }
 
   function handleDelete(id: string) {
     setDeletingId(null);
     startTransition(async () => {
-      const result = await deleteIncomeSource(id);
-      if (result.success) {
-        toast.success("Ingreso eliminado");
-      } else {
-        toast.error(result.error);
-      }
+      await deleteIncomeSource(id);
     });
   }
 
@@ -89,9 +82,9 @@ export function IncomeList({ sources, onAddIncome }: Props) {
         action={
           onAddIncome
             ? {
-                label: "Agregar ingreso",
-                onClick: onAddIncome,
-              }
+              label: "Agregar ingreso",
+              onClick: onAddIncome,
+            }
             : undefined
         }
       />
