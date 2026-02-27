@@ -41,6 +41,7 @@ export function IncomeForm({ source, children, open: controlledOpen, onOpenChang
   };
   const [amountError, setAmountError] = useState(false);
   const [amountFocused, setAmountFocused] = useState(false);
+  const [amountInputValue, setAmountInputValue] = useState<string>("");
   const amountInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<FormValues, unknown, FormValues>({
@@ -51,10 +52,17 @@ export function IncomeForm({ source, children, open: controlledOpen, onOpenChang
   const amount = form.watch("amount");
 
   useEffect(() => {
-    if (open && !source) {
+    if (open) {
+      if (source) {
+        setAmountInputValue(Number(source.amount) > 0 ? Number(source.amount).toString() : "");
+      } else {
+        setAmountInputValue("");
+      }
       setTimeout(() => {
         amountInputRef.current?.focus();
       }, 100);
+    } else {
+      setAmountInputValue("");
     }
   }, [open, source]);
 
@@ -83,7 +91,6 @@ export function IncomeForm({ source, children, open: controlledOpen, onOpenChang
     }
   }
 
-  const displayAmount = amount > 0 ? amount.toFixed(2) : "";
 
   return (
     <ResponsiveSheet
@@ -107,18 +114,32 @@ export function IncomeForm({ source, children, open: controlledOpen, onOpenChang
                           <span className="text-[24px] text-[#6B7280] mr-2">$</span>
                           <input
                             ref={amountInputRef}
-                            type="number"
+                            type="text"
                             inputMode="decimal"
-                            step="0.01"
-                            min="0"
                             placeholder="$0"
-                            value={displayAmount}
-                            onFocus={() => setAmountFocused(true)}
-                            onBlur={() => setAmountFocused(false)}
-                            onChange={(e) => {
-                              const val = e.target.value === "" ? 0 : parseFloat(e.target.value) || 0;
-                              field.onChange(val);
+                            value={amountInputValue}
+                            onFocus={() => {
+                              setAmountFocused(true);
+                              if (amount > 0 && amountInputValue === "") {
+                                setAmountInputValue(amount.toString());
+                              }
+                            }}
+                            onBlur={() => {
+                              setAmountFocused(false);
+                              const numValue = parseFloat(amountInputValue) || 0;
+                              field.onChange(numValue);
+                              setAmountInputValue(numValue > 0 ? numValue.toString() : "");
                               setAmountError(false);
+                            }}
+                            onChange={(e) => {
+                              const rawValue = e.target.value;
+                              // Allow empty, numbers, and one decimal point
+                              if (rawValue === "" || /^\d*\.?\d*$/.test(rawValue)) {
+                                setAmountInputValue(rawValue);
+                                const numValue = parseFloat(rawValue) || 0;
+                                field.onChange(numValue);
+                                setAmountError(false);
+                              }
                             }}
                             className={cn(
                               "w-full text-center text-[42px] font-bold bg-transparent border-none outline-none focus:outline-none",
