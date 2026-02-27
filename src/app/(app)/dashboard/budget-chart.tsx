@@ -27,7 +27,7 @@ export function BudgetChart({ categories }: Props) {
   const options = useMemo(() => {
     return {
       chart: {
-        type: "bar" as const,
+        type: "column" as const,
         backgroundColor: "transparent",
         style: { fontFamily: "inherit" },
       },
@@ -68,25 +68,25 @@ export function BudgetChart({ categories }: Props) {
         },
       },
       plotOptions: {
-        bar: { borderRadius: 4, groupPadding: 0.1 },
+        column: { borderRadius: 4, groupPadding: 0.1 },
       },
       series: [
         {
-          type: "bar" as const,
+          type: "column" as const,
           name: "Asignado",
-          color: "#94a3b8",
+          color: "#354f52",
           data: categories.map((c) => c.assigned),
         },
         {
-          type: "bar" as const,
+          type: "column" as const,
           name: "Planeado",
-          color: "#818cf8",
+          color: "#52796f",
           data: categories.map((c) => c.planned),
         },
         {
-          type: "bar" as const,
+          type: "column" as const,
           name: "Real",
-          color: "#22c55e",
+          color: "#84a98c",
           data: categories.map((c) => c.real),
         },
       ],

@@ -68,8 +68,8 @@ export default async function GastosPage({
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold">Gastos</h1>
-          <p className="text-sm text-muted-foreground">
-            Total: <span className="font-medium text-foreground">{formatCurrency(totalReal)}</span>
+          <p className="text-lg font-semibold text-foreground mt-1">
+            Total: {formatCurrency(totalReal)}
           </p>
         </div>
         <DesktopExpenseButton budgetId={selectedBudget.id} expenseCategories={expenseCategories} />

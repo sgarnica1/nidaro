@@ -6,8 +6,11 @@ import { Badge } from "@/components/ui/badge";
 import { getActiveBudget, getBudgets, getBudgetById } from "@/lib/actions/budgets";
 import { getExpensesByBudget } from "@/lib/actions/expenses";
 import { getCategoriesWithPercentages } from "@/lib/actions/budget-structure";
+import { getExpenseCategories } from "@/lib/actions/expense-categories";
 import { BudgetTable } from "./budget-table";
 import { BudgetFilter } from "./budget-filter";
+import { ExpenseComparisonTable } from "./expense-comparison-table";
+import { BudgetExpensePlanForm } from "./budget-expense-plan-form";
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(amount);
@@ -30,9 +33,10 @@ export default async function DashboardPage({
 }) {
   const { budgetId: selectedId } = await searchParams;
 
-  const [allBudgets, categories] = await Promise.all([
+  const [allBudgets, categories, expenseCategories] = await Promise.all([
     getBudgets(),
     getCategoriesWithPercentages(),
+    getExpenseCategories(),
   ]);
 
   if (allBudgets.length === 0) {
@@ -156,12 +160,24 @@ export default async function DashboardPage({
             {formatDate(budget.startDate)} — {formatDate(budget.endDate)}
           </p>
         </div>
-        <Button asChild variant="outline" size="sm">
-          <Link href="/presupuestos/nuevo">
-            <Plus className="h-4 w-4 mr-1" />
-            Nuevo
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2">
+          <BudgetExpensePlanForm
+            budgetId={budget.id}
+            expenseCategories={expenseCategories}
+            existingCategoryIds={budget.expensePlans.map((p) => p.expenseCategory.id)}
+          >
+            <Button variant="outline" size="sm" className="hidden md:flex">
+              <Plus className="h-4 w-4 mr-1" />
+              Agregar categoría
+            </Button>
+          </BudgetExpensePlanForm>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/presupuestos/nuevo">
+              <Plus className="h-4 w-4 mr-1" />
+              Nuevo presupuesto
+            </Link>
+          </Button>
+        </div>
       </div>
 
       <BudgetFilter budgets={budgetOptions} selectedId={budget.id} />
@@ -201,6 +217,58 @@ export default async function DashboardPage({
         expenses={expensesData}
         categoryPercentages={categoryPercentages}
       />
+
+      <ExpenseComparisonTable
+        expensePlans={budget.expensePlans.map((p) => ({
+          plannedAmount: p.plannedAmount,
+          expenseCategory: {
+            id: p.expenseCategory.id,
+            name: p.expenseCategory.name,
+            budgetCategory: {
+              id: p.expenseCategory.budgetCategory.id,
+              name: p.expenseCategory.budgetCategory.name,
+              order: p.expenseCategory.budgetCategory.order,
+            },
+            subcategory: p.expenseCategory.subcategory
+              ? {
+                id: p.expenseCategory.subcategory.id,
+                name: p.expenseCategory.subcategory.name,
+              }
+              : null,
+          },
+        }))}
+        expenses={expenses.map((e) => ({
+          amount: e.amount,
+          expenseCategory: {
+            id: e.expenseCategory.id,
+            name: e.expenseCategory.name,
+            budgetCategory: {
+              id: e.expenseCategory.budgetCategory.id,
+              name: e.expenseCategory.budgetCategory.name,
+              order: e.expenseCategory.budgetCategory.order,
+            },
+            subcategory: e.expenseCategory.subcategory
+              ? {
+                id: e.expenseCategory.subcategory.id,
+                name: e.expenseCategory.subcategory.name,
+              }
+              : null,
+          },
+        }))}
+      />
+
+      <BudgetExpensePlanForm
+        budgetId={budget.id}
+        expenseCategories={expenseCategories}
+        existingCategoryIds={budget.expensePlans.map((p) => p.expenseCategory.id)}
+      >
+        <Button
+          size="icon"
+          className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg md:hidden z-40"
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
+      </BudgetExpensePlanForm>
     </div>
   );
 }
