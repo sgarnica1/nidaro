@@ -23,7 +23,7 @@ export function MobileNav() {
       initial={{ y: 100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
-      className="fixed bottom-4 left-4 right-4 z-50 rounded-2xl border border-border/30 bg-white/80 backdrop-blur-2xl shadow-xl md:hidden"
+      className="fixed bottom-4 left-4 right-4 z-50 rounded-2xl border border-border/30 bg-white/70 backdrop-blur-3xl shadow-xl md:hidden"
     >
       <div className="flex h-16 items-center justify-around px-2">
         {navItems.map((item) => {

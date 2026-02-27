@@ -184,19 +184,19 @@ export default async function DashboardPage({
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
         <Card className="rounded-2xl border border-border/40 shadow-sm hover:shadow-md transition-shadow duration-300">
-          <CardContent className="p-4">
+          <CardContent>
             <p className="text-sm text-muted-foreground">Planeado</p>
             <p className="text-2xl font-semibold tracking-tight mt-1">{formatCurrency(totalPlanned)}</p>
           </CardContent>
         </Card>
         <Card className="rounded-2xl border border-border/40 shadow-sm hover:shadow-md transition-shadow duration-300">
-          <CardContent className="p-4">
+          <CardContent>
             <p className="text-sm text-muted-foreground">Real</p>
             <p className="text-2xl font-semibold tracking-tight mt-1">{formatCurrency(totalReal)}</p>
           </CardContent>
         </Card>
         <Card className="rounded-2xl border border-border/40 shadow-sm hover:shadow-md transition-shadow duration-300">
-          <CardContent className="p-4">
+          <CardContent>
             <p className="text-sm text-muted-foreground">Restante</p>
             <p className={`text-2xl font-semibold tracking-tight mt-1 ${remaining < 0 ? "text-red-600" : "text-emerald-600"}`}>
               {formatCurrency(remaining)}
@@ -260,7 +260,7 @@ export default async function DashboardPage({
       >
         <Button
           size="icon"
-          className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg md:hidden z-40 bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-200"
+          className="fixed bottom-28 right-4 h-14 w-14 rounded-full shadow-lg md:hidden z-[60] bg-primary hover:bg-primary/90 hover:scale-105 transition-all duration-200"
         >
           <Plus className="h-6 w-6" />
         </Button>
