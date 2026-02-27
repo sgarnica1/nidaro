@@ -29,7 +29,7 @@ import type { ExpenseCategoryWithRelations } from "@/lib/actions/expense-categor
 
 const schema = z.object({
   expenseCategoryId: z.string().min(1, "Selecciona una categoría"),
-  plannedAmount: z.coerce.number().positive("El monto debe ser positivo"),
+  plannedAmount: z.number().positive("El monto debe ser positivo"),
 });
 
 type FormValues = z.infer<typeof schema>;
