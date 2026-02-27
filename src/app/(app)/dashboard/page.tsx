@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { BudgetTable } from "./budget-table";
 import { BudgetFilter } from "./budget-filter";
 import { BudgetCategoryCards } from "./budget-category-cards";
 import { BudgetPlanFAB } from "./budget-plan-fab";
+import { BudgetExpensePlanForm } from "./budget-expense-plan-form";
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(amount);
