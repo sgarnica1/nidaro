@@ -5,31 +5,17 @@ import { ResponsiveSheet } from "@/components/ui/responsive-sheet";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Check } from "lucide-react";
-import type { ExpenseCategoryWithRelations } from "@/lib/actions/expense-categories";
-
-function getCategoryIcon(category: ExpenseCategoryWithRelations): string {
-  const IconMap: Record<string, string> = {
-    Supermercado: "🛒",
-    Salidas: "🍽️",
-    Hogar: "🏠",
-    Transporte: "🚗",
-    Salud: "🏥",
-    Ropa: "👕",
-    Entretenimiento: "🎬",
-    Educación: "📚",
-  };
-  return IconMap[category.name] || "💰";
-}
+import type { BudgetCategoryWithSubs } from "@/lib/actions/expense-categories";
 
 type Props = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  categories: ExpenseCategoryWithRelations[];
+  categories: BudgetCategoryWithSubs[];
   selectedCategoryId: string | null;
   onSelect: (categoryId: string) => void;
 };
 
-export function CategoryPickerSheet({ open, onOpenChange, categories, selectedCategoryId, onSelect }: Props) {
+export function BudgetCategoryPickerSheet({ open, onOpenChange, categories, selectedCategoryId, onSelect }: Props) {
   const [tempSelected, setTempSelected] = useState<string | null>(selectedCategoryId);
 
   const handleConfirm = () => {
@@ -39,12 +25,10 @@ export function CategoryPickerSheet({ open, onOpenChange, categories, selectedCa
     onOpenChange(false);
   };
 
-  const sortedCategories = [...categories].sort((a, b) => a.name.localeCompare(b.name));
-
   return (
     <ResponsiveSheet open={open} onOpenChange={onOpenChange} title="Seleccionar categoría" showDragHandle={true}>
-      <div className="grid grid-cols-2 gap-3 px-4 pb-4">
-        {sortedCategories.map((cat) => {
+      <div className="px-4 pb-4 space-y-2">
+        {categories.map((cat) => {
           const isSelected = tempSelected === cat.id;
           return (
             <button
@@ -52,23 +36,17 @@ export function CategoryPickerSheet({ open, onOpenChange, categories, selectedCa
               type="button"
               onClick={() => setTempSelected(cat.id)}
               className={cn(
-                "relative flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all",
+                "w-full flex items-center justify-between p-4 rounded-2xl border-2 transition-all",
                 isSelected
                   ? "border-[#1C3D2E] bg-[#1C3D2E]/12"
                   : "border-[#F3F4F6] bg-white"
               )}
             >
-              <div
-                className="w-12 h-12 rounded-full mb-2 flex items-center justify-center"
-                style={{ backgroundColor: `${cat.color}20` }}
-              >
-                <span className="text-2xl">{getCategoryIcon(cat)}</span>
-              </div>
-              <span className={cn("text-sm font-medium", isSelected ? "text-[#1C3D2E]" : "text-[#6B7280]")}>
+              <span className={cn("text-[15px] font-medium", isSelected ? "text-[#1C3D2E]" : "text-[#111111]")}>
                 {cat.name}
               </span>
               {isSelected && (
-                <div className="absolute top-2 right-2 w-6 h-6 rounded-full bg-[#1C3D2E] flex items-center justify-center">
+                <div className="w-6 h-6 rounded-full bg-[#1C3D2E] flex items-center justify-center">
                   <Check className="w-4 h-4 text-white" />
                 </div>
               )}

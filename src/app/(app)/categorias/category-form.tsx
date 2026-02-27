@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ChevronRight } from "lucide-react";
@@ -13,15 +13,11 @@ import {
   FormItem,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ResponsiveSheet } from "@/components/ui/responsive-sheet";
+import { BudgetCategoryPickerSheet } from "./budget-category-picker-sheet";
+import { SubcategoryPickerSheet } from "./subcategory-picker-sheet";
 import { cn } from "@/lib/utils";
 import { EXPENSE_COLORS } from "@/lib/colors";
 import {
@@ -67,6 +63,8 @@ export function CategoryForm({ budgetCategories, expenseCategory, defaultCategor
     setInternalOpen(val);
     onOpenChange?.(val);
   };
+  const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
+  const [subcategoryPickerOpen, setSubcategoryPickerOpen] = useState(false);
 
   const resolvedCategoryId = expenseCategory?.categoryId ?? defaultCategoryId ?? "";
   const defaultBudgetCat = budgetCategories.find((c) => c.id === resolvedCategoryId);
@@ -82,10 +80,11 @@ export function CategoryForm({ budgetCategories, expenseCategory, defaultCategor
     },
   });
 
-  const selectedCategoryId = form.watch("categoryId");
+  const selectedCategoryId = useWatch({ control: form.control, name: "categoryId" });
   const selectedBudgetCat = budgetCategories.find((c) => c.id === selectedCategoryId);
   const hasSubs = (selectedBudgetCat?.subcategories.length ?? 0) > 0;
-  const selectedColor = form.watch("color");
+  const selectedColor = useWatch({ control: form.control, name: "color" });
+  const nameValue = useWatch({ control: form.control, name: "name" });
 
   useEffect(() => {
     if (!open) {
@@ -125,7 +124,8 @@ export function CategoryForm({ budgetCategories, expenseCategory, defaultCategor
   }
 
   const selectedCategory = budgetCategories.find((c) => c.id === selectedCategoryId);
-  const selectedSubcategory = selectedCategory?.subcategories.find((s) => s.id === form.watch("subcategoryId"));
+  const subcategoryId = useWatch({ control: form.control, name: "subcategoryId" });
+  const selectedSubcategory = selectedCategory?.subcategories.find((s) => s.id === subcategoryId);
 
   return (
     <ResponsiveSheet
@@ -156,29 +156,24 @@ export function CategoryForm({ budgetCategories, expenseCategory, defaultCategor
               />
             </div>
 
-            <div className="h-[1px] bg-[#F3F4F6]" />
+            <div className="h-px bg-[#F3F4F6]" />
 
             <FormField
               control={form.control}
               name="categoryId"
-              render={({ field }) => (
+              render={() => (
                 <FormItem>
                   <FormControl>
-                    <Select onValueChange={handleCategoryChange} value={field.value}>
-                      <SelectTrigger className="h-[52px] border-none border-b border-[#F3F4F6] rounded-none px-4">
-                        <div className="flex items-center justify-between w-full">
-                          <span className="text-[15px] font-medium text-[#111111]">
-                            {selectedCategory ? selectedCategory.name : "Categoría principal"}
-                          </span>
-                          <ChevronRight className="h-5 w-5 text-[#6B7280]" />
-                        </div>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {budgetCategories.map((cat) => (
-                          <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <button
+                      type="button"
+                      onClick={() => setCategoryPickerOpen(true)}
+                      className="w-full h-[52px] flex items-center px-4 border-b border-[#F3F4F6]"
+                    >
+                      <span className="flex-1 text-left text-[15px] font-medium text-[#111111]">
+                        {selectedCategory ? selectedCategory.name : "Categoría principal"}
+                      </span>
+                      <ChevronRight className="h-5 w-5 text-[#6B7280]" />
+                    </button>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -187,28 +182,23 @@ export function CategoryForm({ budgetCategories, expenseCategory, defaultCategor
 
             {hasSubs && (
               <>
-                <div className="h-[1px] bg-[#F3F4F6]" />
+                <div className="h-px bg-[#F3F4F6]" />
                 <FormField
                   control={form.control}
                   name="subcategoryId"
-                  render={({ field }) => (
+                  render={() => (
                     <FormItem>
                       <FormControl>
-                        <Select onValueChange={field.onChange} value={field.value ?? ""}>
-                          <SelectTrigger className="h-[52px] border-none border-b border-[#F3F4F6] rounded-none px-4">
-                            <div className="flex items-center justify-between w-full">
-                              <span className="text-[15px] font-medium text-[#111111]">
-                                {selectedSubcategory ? selectedSubcategory.name : "Subcategoría"}
-                              </span>
-                              <ChevronRight className="h-5 w-5 text-[#6B7280]" />
-                            </div>
-                          </SelectTrigger>
-                          <SelectContent>
-                            {selectedBudgetCat!.subcategories.map((sub) => (
-                              <SelectItem key={sub.id} value={sub.id}>{sub.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <button
+                          type="button"
+                          onClick={() => setSubcategoryPickerOpen(true)}
+                          className="w-full h-[52px] flex items-center px-4 border-b border-[#F3F4F6]"
+                        >
+                          <span className="flex-1 text-left text-[15px] font-medium text-[#111111]">
+                            {selectedSubcategory ? selectedSubcategory.name : "Subcategoría"}
+                          </span>
+                          <ChevronRight className="h-5 w-5 text-[#6B7280]" />
+                        </button>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -217,7 +207,7 @@ export function CategoryForm({ budgetCategories, expenseCategory, defaultCategor
               </>
             )}
 
-            <div className="h-[1px] bg-[#F3F4F6]" />
+            <div className="h-px bg-[#F3F4F6]" />
 
             <div className="px-4 py-4">
               <p className="text-[11px] uppercase text-[#6B7280] mb-3">Color</p>
@@ -251,7 +241,7 @@ export function CategoryForm({ budgetCategories, expenseCategory, defaultCategor
             </button>
             <Button
               type="submit"
-              disabled={form.formState.isSubmitting || !form.watch("name") || !form.watch("categoryId")}
+              disabled={form.formState.isSubmitting || !nameValue || !selectedCategoryId}
               className="w-full h-[52px] text-base font-bold rounded-[14px] bg-[#1C3D2E] hover:bg-[#1C3D2E]/90 text-white disabled:bg-[#9CA3AF] disabled:opacity-50 active:scale-[0.98] transition-transform"
             >
               {form.formState.isSubmitting ? "Guardando..." : expenseCategory ? "Guardar cambios" : "Crear categoría"}
@@ -259,6 +249,30 @@ export function CategoryForm({ budgetCategories, expenseCategory, defaultCategor
           </div>
         </form>
       </Form>
+
+      <BudgetCategoryPickerSheet
+        open={categoryPickerOpen}
+        onOpenChange={setCategoryPickerOpen}
+        categories={budgetCategories}
+        selectedCategoryId={selectedCategoryId}
+        onSelect={(id) => {
+          handleCategoryChange(id);
+          setCategoryPickerOpen(false);
+        }}
+      />
+
+      {hasSubs && selectedBudgetCat && (
+        <SubcategoryPickerSheet
+          open={subcategoryPickerOpen}
+          onOpenChange={setSubcategoryPickerOpen}
+          subcategories={selectedBudgetCat.subcategories}
+          selectedSubcategoryId={subcategoryId ?? null}
+          onSelect={(id) => {
+            form.setValue("subcategoryId", id);
+            setSubcategoryPickerOpen(false);
+          }}
+        />
+      )}
     </ResponsiveSheet>
   );
 }

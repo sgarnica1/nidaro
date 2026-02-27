@@ -7,7 +7,6 @@ import { z } from "zod";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { CalendarIcon, ChevronRight } from "lucide-react";
-import { toast } from "sonner";
 import { ResponsiveSheet } from "@/components/ui/responsive-sheet";
 import {
   Form,
@@ -33,7 +32,7 @@ import { CategoryPickerSheet } from "./category-picker-sheet";
 const schema = z.object({
   budgetId: z.string().min(1),
   expenseCategoryId: z.string().min(1, "Selecciona una categoría"),
-  name: z.string().default(""),
+  name: z.string().min(1, "La descripción es requerida"),
   amount: z.coerce.number().positive("El monto debe ser positivo"),
   date: z.string().min(1, "La fecha es requerida"),
 });
@@ -82,7 +81,16 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
   const amount = form.watch("amount");
   const selectedCategoryId = form.watch("expenseCategoryId");
   const selectedCategory = expenseCategories.find((c) => c.id === selectedCategoryId);
-  const topCategories = expenseCategories.slice(0, 6);
+  const sortedCategories = [...expenseCategories].sort((a, b) => a.name.localeCompare(b.name));
+
+  // Ensure selected category is always in the top categories if it exists
+  let topCategories = sortedCategories.slice(0, 6);
+  if (selectedCategoryId && !topCategories.find((c) => c.id === selectedCategoryId)) {
+    const selectedCat = sortedCategories.find((c) => c.id === selectedCategoryId);
+    if (selectedCat) {
+      topCategories = [selectedCat, ...sortedCategories.filter((c) => c.id !== selectedCategoryId)].slice(0, 6);
+    }
+  }
 
   useEffect(() => {
     if (open && !expense) {
@@ -114,13 +122,6 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
       setOpen(false);
       form.reset({ ...form.getValues(), name: "", amount: 0, date: todayString() });
       onClose?.();
-      toast.success("Gasto guardado", {
-        duration: 2500,
-        style: {
-          backgroundColor: "#10B981",
-          color: "white",
-        },
-      });
     }
   }
 
@@ -259,22 +260,20 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
                           setCategoryError(false);
                         }}
                         className={cn(
-                          "h-9 px-3 rounded-full flex items-center gap-2 shrink-0 transition-all",
+                          "h-9 px-3 rounded-full flex items-center gap-2 shrink-0 transition-all font-medium",
                           isSelected
-                            ? "border border-current"
-                            : "bg-[#F3F4F6] text-[#6B7280] border border-transparent"
+                            ? "border-2 bg-[#1C3D2E]/20 text-[#1C3D2E]"
+                            : "bg-[#F3F4F6] text-[#6B7280] border-2 border-transparent"
                         )}
                         style={
                           isSelected
                             ? {
-                              backgroundColor: `${cat.color}20`,
-                              color: cat.color,
-                              borderColor: cat.color,
+                              borderColor: "#1C3D2E",
                             }
                             : {}
                         }
                       >
-                        <span className="text-sm font-medium">{cat.name}</span>
+                        <span className="text-sm">{cat.name}</span>
                       </button>
                     );
                   })}
@@ -298,8 +297,8 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
                     <FormItem>
                       <FormControl>
                         <Textarea
-                          placeholder="Descripción (opcional)"
-                          className="min-h-[60px] bg-[#F8F8F6] border-none rounded-xl px-[14px] py-[14px] text-[15px] leading-[1.5] resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
+                          placeholder="Descripción"
+                          className="min-h-[100px] bg-[#F8F8F6] border-none rounded-xl px-[14px] py-[14px] text-[15px] leading-normal resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
                           {...field}
                         />
                       </FormControl>
@@ -320,7 +319,7 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
               </button>
               <Button
                 type="submit"
-                disabled={form.formState.isSubmitting || amount === 0 || !selectedCategoryId}
+                disabled={form.formState.isSubmitting || amount === 0 || !selectedCategoryId || !form.watch("name")}
                 className="w-full h-[52px] text-base font-bold rounded-[14px] bg-[#1C3D2E] hover:bg-[#1C3D2E]/90 text-white disabled:bg-[#9CA3AF] disabled:opacity-50 active:scale-[0.98] transition-transform"
               >
                 {form.formState.isSubmitting ? "Guardando..." : "Guardar gasto"}
@@ -333,7 +332,7 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
       <CategoryPickerSheet
         open={categoryPickerOpen}
         onOpenChange={setCategoryPickerOpen}
-        categories={expenseCategories}
+        categories={sortedCategories}
         selectedCategoryId={selectedCategoryId}
         onSelect={(id) => {
           form.setValue("expenseCategoryId", id);

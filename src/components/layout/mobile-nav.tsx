@@ -45,7 +45,7 @@ export function MobileNav() {
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.3, ease: "easeOut" }}
       className={cn(
-        "fixed bottom-4 left-4 right-4 z-50 rounded-2xl border border-border/30 bg-white/70 backdrop-blur-3xl shadow-xl md:hidden",
+        "fixed bottom-6 left-4 right-4 z-50 rounded-2xl border border-border/30 bg-white/70 backdrop-blur-3xl shadow-xl md:hidden",
         (isSheetOpen || isWizardOpen) && "hidden"
       )}
     >

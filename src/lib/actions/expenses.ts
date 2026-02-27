@@ -10,7 +10,7 @@ import type { Expense, ExpenseCategory, BudgetCategory, BudgetSubcategory } from
 const expenseSchema = z.object({
   budgetId: z.string().min(1),
   expenseCategoryId: z.string().min(1, "Selecciona una categoría"),
-  name: z.string().default(""),
+  name: z.string().min(1, "La descripción es requerida"),
   amount: z.coerce.number().positive("El monto debe ser positivo"),
   date: z.string().min(1, "La fecha es requerida"),
 });
