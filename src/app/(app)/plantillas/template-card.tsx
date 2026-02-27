@@ -14,9 +14,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { deleteTemplate, deleteTemplateItem, upsertTemplateItem, type TemplateWithItems } from "@/lib/actions/templates";
+import { deleteTemplate, deleteTemplateItem, type TemplateWithItems } from "@/lib/actions/templates";
 import type { ExpenseCategoryWithRelations, BudgetCategoryWithSubs } from "@/lib/actions/expense-categories";
 import { Input } from "@/components/ui/input";
+import { TemplateItemForm } from "./template-item-form";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -60,15 +61,14 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 export function TemplateCard({
   template,
-  expenseCategories: _expenseCategories,
+  expenseCategories,
   budgetCategories,
   totalIncome,
 }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [deleteOpen, setDeleteOpen] = useState(false);
-  const [editingItemId, setEditingItemId] = useState<string | null>(null);
-  const [editingAmount, setEditingAmount] = useState<string>("");
+  const [editingItem, setEditingItem] = useState<{ id: string; expenseCategoryId: string; plannedAmount: number } | null>(null);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [swipedItemId, setSwipedItemId] = useState<string | null>(null);
   const [confirmDeleteText, setConfirmDeleteText] = useState("");
@@ -135,33 +135,9 @@ export function TemplateCard({
     });
   }
 
-  function handleStartEdit(itemId: string, currentAmount: number) {
+  function handleStartEdit(item: { id: string; expenseCategoryId: string; plannedAmount: number }) {
     setSwipedItemId(null);
-    setEditingItemId(itemId);
-    setEditingAmount(currentAmount.toString());
-  }
-
-  function handleCancelEdit() {
-    setEditingItemId(null);
-    setEditingAmount("");
-  }
-
-  function handleSaveAmount(itemId: string, expenseCategoryId: string) {
-    const amount = parseFloat(editingAmount);
-    if (isNaN(amount) || amount <= 0) {
-      handleCancelEdit();
-      return;
-    }
-
-    startTransition(async () => {
-      const result = await upsertTemplateItem(template.id, {
-        expenseCategoryId,
-        plannedAmount: amount,
-      });
-      if (result.success) {
-        handleCancelEdit();
-      }
-    });
+    setEditingItem(item);
   }
 
   function toggleSection(categoryId: string) {
@@ -194,6 +170,8 @@ export function TemplateCard({
       }
     }
   }, [expandedSections.size, budgetCategories, template.items]);
+
+  const existingCategoryIds = template.items.map((i) => i.expenseCategory.id);
 
   return (
     <div className="pb-6">
@@ -345,14 +323,22 @@ export function TemplateCard({
                         <AlertCircle className="h-6 w-6 text-[#6B7280]" />
                       </div>
                       <p className="text-[13px] text-[#6B7280] mb-4">Sin gastos en esta categoría</p>
-                      <Button
-                        variant="outline"
-                        className="h-11 w-full border-dashed border-[#D1D5DB] text-[#6B7280] hover:bg-[#F3F4F6]"
-                        onClick={() => router.push(`/plantillas/${template.id}/agregar-gasto?categoria=${bc.id}`)}
+                      <TemplateItemForm
+                        templateId={template.id}
+                        expenseCategories={expenseCategories}
+                        budgetCategories={budgetCategories}
+                        filterBudgetCategoryId={bc.id}
+                        existingItemCategoryIds={existingCategoryIds}
+                        onItemAdded={() => { }}
                       >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Agregar gasto
-                      </Button>
+                        <Button
+                          variant="outline"
+                          className="h-11 w-full border-dashed border-[#D1D5DB] text-[#6B7280] hover:bg-[#F3F4F6]"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Agregar gasto
+                        </Button>
+                      </TemplateItemForm>
                     </div>
                   ) : (
                     <>
@@ -421,7 +407,11 @@ export function TemplateCard({
                                     variant="ghost"
                                     size="icon"
                                     className="h-full w-16 bg-[#3B82F6] hover:bg-[#2563EB] rounded-l-lg rounded-r-none"
-                                    onClick={() => handleStartEdit(item.id, Number(item.plannedAmount))}
+                                    onClick={() => handleStartEdit({
+                                      id: item.id,
+                                      expenseCategoryId: item.expenseCategory.id,
+                                      plannedAmount: Number(item.plannedAmount),
+                                    })}
                                   >
                                     <Pencil className="h-4 w-4 text-white" />
                                   </Button>
@@ -459,40 +449,22 @@ export function TemplateCard({
                                     )}
                                   </div>
                                   <div className="text-right shrink-0">
-                                    {editingItemId === item.id ? (
-                                      <Input
-                                        type="number"
-                                        step="0.01"
-                                        min="0"
-                                        value={editingAmount}
-                                        onChange={(e) => setEditingAmount(e.target.value)}
-                                        onBlur={() => handleSaveAmount(item.id, item.expenseCategory.id)}
-                                        onKeyDown={(e) => {
-                                          if (e.key === "Enter") {
-                                            handleSaveAmount(item.id, item.expenseCategory.id);
-                                          } else if (e.key === "Escape") {
-                                            handleCancelEdit();
-                                          }
-                                        }}
-                                        className="h-8 w-24 text-sm"
-                                        autoFocus
-                                      />
-                                    ) : (
-                                      <>
-                                        <p
-                                          className="text-[16px] font-bold text-[#111111] tabular-nums cursor-pointer hover:text-[#1C3D2E] transition-colors"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleStartEdit(item.id, Number(item.plannedAmount));
-                                          }}
-                                        >
-                                          {formatCurrency(Number(item.plannedAmount))}
-                                        </p>
-                                        <p className="text-[11px] text-[#22C55E] font-medium">
-                                          {itemPct.toFixed(1)}%
-                                        </p>
-                                      </>
-                                    )}
+                                    <p
+                                      className="text-[16px] font-bold text-[#111111] tabular-nums cursor-pointer hover:text-[#1C3D2E] transition-colors"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleStartEdit({
+                                          id: item.id,
+                                          expenseCategoryId: item.expenseCategory.id,
+                                          plannedAmount: Number(item.plannedAmount),
+                                        });
+                                      }}
+                                    >
+                                      {formatCurrency(Number(item.plannedAmount))}
+                                    </p>
+                                    <p className="text-[11px] text-[#22C55E] font-medium">
+                                      {itemPct.toFixed(1)}%
+                                    </p>
                                   </div>
                                 </div>
                               </div>
@@ -503,14 +475,22 @@ export function TemplateCard({
 
                       {/* Add Expense Button */}
                       <div className="p-4 border-t border-[#F3F4F6]">
-                        <Button
-                          variant="outline"
-                          className="h-11 w-full border-dashed border-[#D1D5DB] text-[#6B7280] hover:bg-[#F3F4F6]"
-                          onClick={() => router.push(`/plantillas/${template.id}/agregar-gasto?categoria=${bc.id}`)}
+                        <TemplateItemForm
+                          templateId={template.id}
+                          expenseCategories={expenseCategories}
+                          budgetCategories={budgetCategories}
+                          filterBudgetCategoryId={bc.id}
+                          existingItemCategoryIds={existingCategoryIds}
+                          onItemAdded={() => { }}
                         >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Agregar gasto {hasMultipleGroups ? (groups[0]?.subcategoryName ? "fijo" : "variable") : ""}
-                        </Button>
+                          <Button
+                            variant="outline"
+                            className="h-11 w-full border-dashed border-[#D1D5DB] text-[#6B7280] hover:bg-[#F3F4F6]"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Agregar gasto {hasMultipleGroups ? (groups[0]?.subcategoryName ? "fijo" : "variable") : ""}
+                          </Button>
+                        </TemplateItemForm>
                       </div>
                     </>
                   )}
@@ -520,6 +500,33 @@ export function TemplateCard({
           );
         })}
       </div>
+
+      {/* Edit Item Sheet */}
+      {editingItem && (
+        <TemplateItemForm
+          templateId={template.id}
+          expenseCategories={expenseCategories}
+          budgetCategories={budgetCategories}
+          filterBudgetCategoryId={expenseCategories.find((c) => c.id === editingItem.expenseCategoryId)?.budgetCategory.id}
+          existingItemCategoryIds={existingCategoryIds}
+          editingItem={{
+            expenseCategoryId: editingItem.expenseCategoryId,
+            plannedAmount: editingItem.plannedAmount,
+          }}
+          open={editingItem !== null}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEditingItem(null);
+            }
+          }}
+          onItemAdded={() => {
+            setEditingItem(null);
+            router.refresh();
+          }}
+        >
+          <span className="sr-only" />
+        </TemplateItemForm>
+      )}
 
       {/* Delete Button */}
       <div className="mt-6">

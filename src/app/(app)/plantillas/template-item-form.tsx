@@ -37,6 +37,12 @@ type Props = {
   existingItemCategoryIds?: string[]; // Expense category IDs already in the template
   children: React.ReactNode;
   onItemAdded?: () => void;
+  editingItem?: {
+    expenseCategoryId: string;
+    plannedAmount: number;
+  } | null;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
 export function TemplateItemForm({
@@ -47,36 +53,68 @@ export function TemplateItemForm({
   existingItemCategoryIds = [],
   children,
   onItemAdded,
+  editingItem = null,
+  open: controlledOpen,
+  onOpenChange: controlledOnOpenChange,
 }: Props) {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen = (val: boolean) => {
+    if (controlledOnOpenChange) {
+      controlledOnOpenChange(val);
+    } else {
+      setInternalOpen(val);
+    }
+  };
   const [newCategoryOpen, setNewCategoryOpen] = useState(false);
   const [amountFocused, setAmountFocused] = useState(false);
   const amountInputRef = useRef<HTMLInputElement>(null);
 
-  // First filter by budget category, then exclude already added categories
+  // First filter by budget category, then exclude already added categories (unless editing)
   const filteredCategories = (filterBudgetCategoryId
     ? initialExpenseCategories.filter((c) => c.budgetCategory.id === filterBudgetCategoryId)
     : initialExpenseCategories
-  ).filter((c) => !existingItemCategoryIds.includes(c.id));
+  ).filter((c) => {
+    // If editing, include the current category; otherwise exclude existing ones
+    if (editingItem && c.id === editingItem.expenseCategoryId) return true;
+    return !existingItemCategoryIds.includes(c.id);
+  });
 
   const form = useForm<FormValues, unknown, FormValues>({
     resolver: zodResolver(schema) as never,
-    defaultValues: { expenseCategoryId: "", plannedAmount: 0 },
+    defaultValues: {
+      expenseCategoryId: editingItem?.expenseCategoryId ?? "",
+      plannedAmount: editingItem?.plannedAmount ?? 0,
+    },
   });
 
   const amount = useWatch({ control: form.control, name: "plannedAmount" });
   const selectedCategoryId = useWatch({ control: form.control, name: "expenseCategoryId" });
-  const displayAmount = amount > 0 ? amount.toFixed(2) : "";
+  const [amountInputValue, setAmountInputValue] = useState<string>("");
 
   useEffect(() => {
     if (open) {
+      // Reset form with editing item data when opening
+      if (editingItem) {
+        form.reset({
+          expenseCategoryId: editingItem.expenseCategoryId,
+          plannedAmount: editingItem.plannedAmount,
+        });
+        setAmountInputValue(editingItem.plannedAmount > 0 ? editingItem.plannedAmount.toString() : "");
+      } else {
+        setAmountInputValue("");
+      }
       setTimeout(() => {
         amountInputRef.current?.focus();
       }, 100);
     } else {
-      form.reset();
+      form.reset({
+        expenseCategoryId: "",
+        plannedAmount: 0,
+      });
+      setAmountInputValue("");
     }
-  }, [open, form]);
+  }, [open, editingItem, form]);
 
   function handleOpenChange(val: boolean) {
     setOpen(val);
@@ -116,7 +154,9 @@ export function TemplateItemForm({
             {/* Custom Header */}
             <div className="px-4 pt-5 pb-0">
               <div className="flex items-center gap-2 mb-5">
-                <h2 className="text-[18px] font-bold text-[#111111]">Agregar gasto</h2>
+                <h2 className="text-[18px] font-bold text-[#111111]">
+                  {editingItem ? "Editar gasto" : "Agregar gasto"}
+                </h2>
                 {activeBudgetCat && (
                   <span className="bg-[#EAF2EC] text-[#1C3D2E] text-[12px] font-medium px-[10px] py-1 rounded-[99px]">
                     {activeBudgetCat.name}
@@ -139,17 +179,30 @@ export function TemplateItemForm({
                             <span className="text-[24px] text-[#6B7280] mr-2">$</span>
                             <input
                               ref={amountInputRef}
-                              type="number"
+                              type="text"
                               inputMode="decimal"
-                              step="0.01"
-                              min="0"
                               placeholder="$0"
-                              value={displayAmount}
-                              onFocus={() => setAmountFocused(true)}
-                              onBlur={() => setAmountFocused(false)}
+                              value={amountInputValue}
+                              onFocus={() => {
+                                setAmountFocused(true);
+                                if (amount > 0 && amountInputValue === "") {
+                                  setAmountInputValue(amount.toString());
+                                }
+                              }}
+                              onBlur={() => {
+                                setAmountFocused(false);
+                                const numValue = parseFloat(amountInputValue) || 0;
+                                field.onChange(numValue);
+                                setAmountInputValue(numValue > 0 ? numValue.toString() : "");
+                              }}
                               onChange={(e) => {
-                                const val = e.target.value === "" ? 0 : parseFloat(e.target.value) || 0;
-                                field.onChange(val);
+                                const rawValue = e.target.value;
+                                // Allow empty, numbers, and one decimal point
+                                if (rawValue === "" || /^\d*\.?\d*$/.test(rawValue)) {
+                                  setAmountInputValue(rawValue);
+                                  const numValue = parseFloat(rawValue) || 0;
+                                  field.onChange(numValue);
+                                }
                               }}
                               className={cn(
                                 "w-full text-center text-[42px] font-bold bg-transparent border-none outline-none focus:outline-none",
@@ -257,7 +310,7 @@ export function TemplateItemForm({
                     Agregando...
                   </>
                 ) : (
-                  "Agregar gasto"
+                  editingItem ? "Guardar cambios" : "Agregar gasto"
                 )}
               </Button>
             </div>
