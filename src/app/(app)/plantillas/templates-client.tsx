@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plus, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 import type { TemplateWithItems } from "@/lib/actions/templates";
 import type { ExpenseCategoryWithRelations, BudgetCategoryWithSubs } from "@/lib/actions/expense-categories";
+import { duplicateTemplate } from "@/lib/actions/templates";
 import { EnhancedTemplateCard } from "./enhanced-template-card";
 import { NewTemplateSheet } from "./new-template-button";
 import { TemplateInfoSheet } from "./template-info-sheet";
@@ -21,6 +23,19 @@ type Props = {
 export function TemplatesClient({ templates, expenseCategories, budgetCategories, totalIncome }: Props) {
   const router = useRouter();
   const [newTemplateOpen, setNewTemplateOpen] = useState(false);
+  const [pending, startTransition] = useTransition();
+
+  const handleDuplicate = (templateId: string) => {
+    startTransition(async () => {
+      const result = await duplicateTemplate(templateId);
+      if (result.success) {
+        toast.success("Plantilla duplicada exitosamente");
+        router.refresh();
+      } else {
+        toast.error(result.error || "Error al duplicar la plantilla");
+      }
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -79,6 +94,7 @@ export function TemplatesClient({ templates, expenseCategories, budgetCategories
                     totalIncome={totalIncome}
                     onClick={() => router.push(`/plantillas/${template.id}`)}
                     onUse={() => router.push(`/plantillas/${template.id}`)}
+                    onDuplicate={() => handleDuplicate(template.id)}
                   />
                 </motion.div>
               ))}

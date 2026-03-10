@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { motion } from "framer-motion";
 import { Plus, Loader2 } from "lucide-react";
 import {
   Form,
@@ -22,6 +23,15 @@ import type {
   BudgetCategoryWithSubs,
 } from "@/lib/actions/expense-categories";
 
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat("es-MX", {
+    style: "currency",
+    currency: "MXN",
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
+
 const schema = z.object({
   expenseCategoryId: z.string().min(1, "Selecciona una categoría"),
   plannedAmount: z.coerce.number().positive("El monto debe ser positivo"),
@@ -34,7 +44,7 @@ type Props = {
   expenseCategories: ExpenseCategoryWithRelations[];
   budgetCategories: BudgetCategoryWithSubs[];
   filterBudgetCategoryId?: string;
-  existingItemCategoryIds?: string[]; // Expense category IDs already in the template
+  existingItemCategoryIds?: string[];
   children: React.ReactNode;
   onItemAdded?: () => void;
   editingItem?: {
@@ -43,6 +53,7 @@ type Props = {
   } | null;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  currentCategoryTotal?: number;
 };
 
 export function TemplateItemForm({
@@ -56,6 +67,7 @@ export function TemplateItemForm({
   editingItem = null,
   open: controlledOpen,
   onOpenChange: controlledOnOpenChange,
+  currentCategoryTotal = 0,
 }: Props) {
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen ?? internalOpen;
@@ -91,6 +103,13 @@ export function TemplateItemForm({
   const amount = useWatch({ control: form.control, name: "plannedAmount" });
   const selectedCategoryId = useWatch({ control: form.control, name: "expenseCategoryId" });
   const [amountInputValue, setAmountInputValue] = useState<string>("");
+
+  const previewTotal = useMemo(() => {
+    if (editingItem) {
+      return currentCategoryTotal - editingItem.plannedAmount + amount;
+    }
+    return currentCategoryTotal + amount;
+  }, [currentCategoryTotal, amount, editingItem]);
 
   useEffect(() => {
     if (open) {
@@ -167,7 +186,7 @@ export function TemplateItemForm({
 
             <div className="flex-1 overflow-y-auto">
               {/* Amount Hero Field */}
-              <div className="pt-5 pb-4">
+              <div className="pt-8 pb-6 px-4">
                 <FormField
                   control={form.control}
                   name="plannedAmount"
@@ -175,13 +194,17 @@ export function TemplateItemForm({
                     <FormItem>
                       <FormControl>
                         <div className="relative">
-                          <div className="flex items-center justify-center">
-                            <span className="text-[24px] text-[#6B7280] mr-2">$</span>
+                          <motion.div
+                            animate={{ scale: amountFocused ? 1.02 : 1 }}
+                            transition={{ duration: 0.2 }}
+                            className="flex items-center justify-center"
+                          >
+                            <span className="text-[32px] text-[#6B7280] mr-3 font-medium">$</span>
                             <input
                               ref={amountInputRef}
                               type="text"
                               inputMode="decimal"
-                              placeholder="$0"
+                              placeholder="0"
                               value={amountInputValue}
                               onFocus={() => {
                                 setAmountFocused(true);
@@ -197,7 +220,6 @@ export function TemplateItemForm({
                               }}
                               onChange={(e) => {
                                 const rawValue = e.target.value;
-                                // Allow empty, numbers, and one decimal point
                                 if (rawValue === "" || /^\d*\.?\d*$/.test(rawValue)) {
                                   setAmountInputValue(rawValue);
                                   const numValue = parseFloat(rawValue) || 0;
@@ -205,35 +227,78 @@ export function TemplateItemForm({
                                 }
                               }}
                               className={cn(
-                                "w-full text-center text-[42px] font-bold bg-transparent border-none outline-none focus:outline-none",
-                                "placeholder:text-[#D1D5DB] placeholder:text-[42px]",
+                                "w-full text-center bg-transparent border-none outline-none focus:outline-none",
+                                "text-[56px] font-bold tabular-nums",
+                                "placeholder:text-[#D1D5DB] placeholder:text-[56px]",
                                 amountFocused ? "text-[#1C3D2E]" : "text-[#111111]",
                                 "transition-colors"
                               )}
                             />
-                            <span className="text-[12px] text-[#6B7280] ml-2 mt-2">MXN</span>
-                          </div>
-                          <div
-                            className={cn(
-                              "absolute bottom-0 left-0 right-0 h-[2px] transition-transform duration-300 origin-center",
-                              amount > 0 || amountFocused
-                                ? "bg-[#1C3D2E] scale-x-100"
-                                : "bg-[#1C3D2E] scale-x-0"
-                            )}
-                          />
+                            <span className="text-[14px] text-[#6B7280] ml-3 mt-4 font-medium">MXN</span>
+                          </motion.div>
                         </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+
+                {/* Quick Amount Suggestions */}
+                {!amountInputValue && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex items-center justify-center gap-2 mt-6"
+                  >
+                    {[500, 1000, 2000].map((suggestion) => (
+                      <motion.button
+                        key={suggestion}
+                        type="button"
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => {
+                          setAmountInputValue(suggestion.toString());
+                          form.setValue("plannedAmount", suggestion);
+                        }}
+                        className="px-4 py-2 text-[14px] font-medium text-[#6B7280] bg-[#F3F4F6] rounded-xl hover:bg-[#E5E7EB] transition-colors"
+                      >
+                        ${suggestion.toLocaleString()}
+                      </motion.button>
+                    ))}
+                  </motion.div>
+                )}
+
+                {/* Real-time Preview */}
+                {amount > 0 && filterBudgetCategoryId && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-6 p-4 bg-[#F8F9FA] rounded-xl border border-[#E5E7EB]"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-[13px] text-[#6B7280]">Total de {activeBudgetCat?.name}</span>
+                      <div className="text-right">
+                        <span className="text-[16px] font-bold text-[#111111]">{formatCurrency(previewTotal)}</span>
+                        {currentCategoryTotal > 0 && (
+                          <p className="text-[11px] text-[#6B7280] mt-0.5">
+                            {amount > 0 && (
+                              <span className={editingItem ? "text-[#3B82F6]" : "text-[#10B981]"}>
+                                {editingItem ? "Actualizado" : "+"}{formatCurrency(editingItem ? amount - editingItem.plannedAmount : amount)}
+                              </span>
+                            )}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
               </div>
 
               <div className="h-px bg-[#F3F4F6]" />
 
               {/* Category Pills */}
-              <div className="px-4 py-4">
-                <p className="text-[11px] uppercase text-[#6B7280] font-semibold mb-3">Categoría</p>
+              <div className="px-4 py-5">
+                <p className="text-[12px] text-[#6B7280] font-medium mb-4">Selecciona una categoría</p>
                 <div
                   className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4"
                   style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
