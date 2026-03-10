@@ -76,7 +76,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <Sidebar />
       <main className="flex-1 pb-20 md:pb-0 overflow-x-hidden">
         <div className="max-w-5xl mx-auto px-5 py-6">
-          <AnimatePresence mode="popLayout" initial={false}>
+          <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={pathname}
               initial={{ opacity: 0, y: 8 }}

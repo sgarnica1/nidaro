@@ -6,7 +6,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
-import { CalendarIcon, ChevronRight } from "lucide-react";
+import { CalendarIcon, Loader2, Check } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { ResponsiveSheet } from "@/components/ui/responsive-sheet";
 import {
   Form,
@@ -22,12 +23,13 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { createExpense, updateExpense } from "@/lib/actions/expenses";
 import type { ExpenseCategoryWithRelations } from "@/lib/actions/expense-categories";
 import type { ExpenseWithCategory } from "@/lib/actions/expenses";
 import { CategoryPickerSheet } from "./category-picker-sheet";
+import { useIsMobile } from "@/hooks/use-is-mobile";
 
 const schema = z.object({
   budgetId: z.string().min(1),
@@ -54,6 +56,7 @@ function todayString() {
 }
 
 export function ExpenseForm({ budgetId, expenseCategories, expense, children, onClose, open: controlledOpen, onOpenChange }: Props) {
+  const isMobile = useIsMobile();
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen ?? internalOpen;
   const setOpen = (val: boolean) => {
@@ -67,7 +70,9 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
   const [amountFocused, setAmountFocused] = useState(false);
   const [amountInputValue, setAmountInputValue] = useState<string>("");
   const amountInputRef = useRef<HTMLInputElement>(null);
-  const [nameFocused, setNameFocused] = useState(false);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [suggestedCategory, setSuggestedCategory] = useState<string | null>(null);
 
   const form = useForm<FormValues, unknown, FormValues>({
     resolver: zodResolver(schema) as never,
@@ -95,15 +100,43 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
 
   const amount = form.watch("amount");
   const selectedCategoryId = form.watch("expenseCategoryId");
-  const selectedCategory = expenseCategories.find((c) => c.id === selectedCategoryId);
+  const nameValue = form.watch("name");
   const sortedCategories = [...expenseCategories].sort((a, b) => a.name.localeCompare(b.name));
 
-  // Ensure selected category is always in the top categories if it exists
-  let topCategories = sortedCategories.slice(0, 6);
+  // Smart category suggestions based on description
+  useEffect(() => {
+    if (!nameValue || nameValue.length < 2) {
+      setSuggestedCategory(null);
+      return;
+    }
+
+    const lowerName = nameValue.toLowerCase();
+    const suggestions: Record<string, string[]> = {
+      "Transporte": ["uber", "taxi", "metro", "bus", "transporte", "gasolina", "gas"],
+      "Supermercado": ["costco", "walmart", "soriana", "chedraui", "super", "supermercado", "tienda"],
+      "Salidas": ["restaurant", "restaurante", "cafe", "starbucks", "comida", "comer", "tacos", "sushi"],
+      "Salud": ["farmacia", "doctor", "medico", "hospital", "clinica", "salud"],
+      "Hogar": ["home", "depot", "liverpool", "palacio", "hogar", "casa"],
+    };
+
+    for (const [categoryName, keywords] of Object.entries(suggestions)) {
+      if (keywords.some((keyword) => lowerName.includes(keyword))) {
+        const category = sortedCategories.find((c) => c.name === categoryName);
+        if (category && category.id !== selectedCategoryId) {
+          setSuggestedCategory(category.id);
+          return;
+        }
+      }
+    }
+    setSuggestedCategory(null);
+  }, [nameValue, sortedCategories, selectedCategoryId]);
+
+  // Limit to 3-4 visible categories, ensure selected is included
+  let topCategories = sortedCategories.slice(0, 3);
   if (selectedCategoryId && !topCategories.find((c) => c.id === selectedCategoryId)) {
     const selectedCat = sortedCategories.find((c) => c.id === selectedCategoryId);
     if (selectedCat) {
-      topCategories = [selectedCat, ...sortedCategories.filter((c) => c.id !== selectedCategoryId)].slice(0, 6);
+      topCategories = [selectedCat, ...sortedCategories.filter((c) => c.id !== selectedCategoryId)].slice(0, 3);
     }
   }
 
@@ -115,8 +148,8 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
         setAmountInputValue("");
       }
       setTimeout(() => {
-        amountInputRef.current?.focus();
-      }, 100);
+        nameInputRef.current?.focus();
+      }, 150);
     } else {
       setAmountInputValue("");
     }
@@ -141,261 +174,346 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
       : await createExpense(values);
 
     if (result.success) {
-      setOpen(false);
-      if (!expense) {
-        form.reset({
-          budgetId,
-          expenseCategoryId: "",
-          name: "",
-          amount: 0,
-          date: todayString(),
-        });
-        setAmountInputValue("");
-      }
-      onClose?.();
+      setShowSuccess(true);
+      setTimeout(() => {
+        setShowSuccess(false);
+        setOpen(false);
+        if (!expense) {
+          form.reset({
+            budgetId,
+            expenseCategoryId: "",
+            name: "",
+            amount: 0,
+            date: todayString(),
+          });
+          setAmountInputValue("");
+        }
+        onClose?.();
+      }, 500);
     }
   }
 
   const dateValue = form.watch("date") ? new Date(form.watch("date") + "T00:00:00") : undefined;
-  const formattedDate = dateValue ? format(dateValue, "d MMM yyyy", { locale: es }) : "Selecciona fecha";
+  const formattedDate = dateValue ? format(dateValue, "d MMM", { locale: es }) : "Selecciona fecha";
 
   return (
     <>
       <ResponsiveSheet
         open={open}
         onOpenChange={setOpen}
-        title={expense ? "Editar gasto" : "Nuevo gasto"}
+        title=""
         trigger={children}
+        showDragHandle={true}
       >
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
-            <div className="flex-1 overflow-y-auto">
-              <div className="px-4 py-5">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <div className="relative">
-                          <Textarea
-                            placeholder="Descripción"
-                            className="min-h-[60px] max-h-[120px] bg-transparent border-none rounded-none px-0 py-0 text-[24px] font-semibold leading-tight resize-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-[#9CA3AF] placeholder:text-[24px] placeholder:font-semibold"
-                            onFocus={() => setNameFocused(true)}
-                            onBlur={() => setNameFocused(false)}
-                            {...field}
-                          />
-                          <div
-                            className={cn(
-                              "absolute bottom-0 left-0 right-0 h-[2px] transition-transform duration-300 origin-center",
-                              field.value && field.value.length > 0 || nameFocused
-                                ? "bg-[#1C3D2E] scale-x-100"
-                                : "bg-[#1C3D2E] scale-x-0"
-                            )}
-                          />
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="h-[1px] bg-[#F3F4F6]" />
-
-              <div className="pt-5 pb-4">
-                <FormField
-                  control={form.control}
-                  name="amount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <div className="relative">
-                          <div className="flex items-center justify-center">
-                            <span className="text-[24px] text-[#6B7280] mr-2">$</span>
-                            <input
-                              ref={amountInputRef}
-                              type="text"
-                              inputMode="decimal"
-                              placeholder="$0"
-                              value={amountInputValue}
-                              onFocus={() => {
-                                setAmountFocused(true);
-                                if (amount > 0 && amountInputValue === "") {
-                                  setAmountInputValue(amount.toString());
-                                }
-                              }}
-                              onBlur={() => {
-                                setAmountFocused(false);
-                                const numValue = parseFloat(amountInputValue) || 0;
-                                field.onChange(numValue);
-                                setAmountInputValue(numValue > 0 ? numValue.toString() : "");
-                                setAmountError(false);
-                              }}
-                              onChange={(e) => {
-                                const rawValue = e.target.value;
-                                // Allow empty, numbers, and one decimal point
-                                if (rawValue === "" || /^\d*\.?\d*$/.test(rawValue)) {
-                                  setAmountInputValue(rawValue);
-                                  const numValue = parseFloat(rawValue) || 0;
-                                  field.onChange(numValue);
-                                  setAmountError(false);
-                                }
-                              }}
-                              className={cn(
-                                "w-full text-center text-[42px] font-bold bg-transparent border-none outline-none focus:outline-none",
-                                "placeholder:text-[#D1D5DB] placeholder:text-[42px]",
-                                amountError ? "text-[#DC2626] animate-[shake_0.5s]" : amountFocused ? "text-[#1C3D2E]" : "text-[#111111]",
-                                "transition-colors"
-                              )}
-                            />
-                            <span className="text-[12px] text-[#6B7280] ml-2 mt-2">MXN</span>
-                          </div>
-                          <div
-                            className={cn(
-                              "absolute bottom-0 left-0 right-0 h-[2px] transition-transform duration-300 origin-center",
-                              amountError
-                                ? "bg-[#DC2626] scale-x-100"
-                                : amount > 0 || amountFocused
-                                  ? "bg-[#1C3D2E] scale-x-100"
-                                  : "bg-[#1C3D2E] scale-x-0"
-                            )}
-                          />
-                        </div>
-                      </FormControl>
-                      {amountError && (
-                        <p className="text-[12px] text-[#DC2626] text-center mt-2">Ingresa un monto</p>
-                      )}
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-
-              <div className="h-[1px] bg-[#F3F4F6]" />
-
-              <FormField
-                control={form.control}
-                name="date"
-                render={({ field }) => {
-                  return (
-                    <FormItem>
-                      <FormControl>
-                        <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                          <PopoverTrigger asChild>
-                            <button
-                              type="button"
-                              className="w-full h-[52px] flex items-center px-4 border-b border-[#F3F4F6]"
-                            >
-                              <CalendarIcon className="h-5 w-5 text-[#1C3D2E] mr-3" />
-                              <span className="flex-1 text-left text-[15px] font-medium text-[#111111]">
-                                {formattedDate}
-                              </span>
-                              <ChevronRight className="h-5 w-5 text-[#6B7280]" />
-                            </button>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0 z-200" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={dateValue}
-                              onSelect={(day) => {
-                                if (day) {
-                                  const year = day.getFullYear();
-                                  const month = String(day.getMonth() + 1).padStart(2, "0");
-                                  const date = String(day.getDate()).padStart(2, "0");
-                                  field.onChange(`${year}-${month}-${date}`);
-                                  setCalendarOpen(false);
-                                }
-                              }}
-                              initialFocus
-                              classNames={{
-                                day: "h-12 w-12 text-base",
-                                day_button: "h-12 w-12 text-base",
-                                month_caption: "h-12 text-lg mb-3 relative z-10",
-                                nav: "relative mb-3",
-                                caption_label: "text-lg font-semibold",
-                                weekdays: "flex flex-row mb-2 mt-1",
-                                weekday: "h-10 text-sm text-center flex-1 flex items-center justify-center min-w-0",
-                                month: "gap-3",
-                                table: "w-full",
-                              }}
-                            />
-                          </PopoverContent>
-                        </Popover>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  );
-                }}
-              />
-
-              <div className="h-[1px] bg-[#F3F4F6]" />
-
-              <div className="px-4 py-3">
-                <p className="text-[11px] uppercase text-[#6B7280] mb-3">Categoría</p>
-                <div
-                  className={cn(
-                    "flex gap-2 overflow-x-auto pb-2 -mx-4 px-4",
-                    categoryError && "bg-[#FEF3C7] rounded-lg p-2 transition-colors"
-                  )}
-                  style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            <AnimatePresence>
+              {showSuccess ? (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  transition={{ duration: 0.2 }}
+                  className="flex-1 flex items-center justify-center"
                 >
-                  {topCategories.map((cat) => {
-                    const isSelected = selectedCategoryId === cat.id;
-                    return (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => {
-                          form.setValue("expenseCategoryId", cat.id);
-                          setCategoryError(false);
-                        }}
-                        className={cn(
-                          "h-9 px-3 rounded-full flex items-center gap-2 shrink-0 transition-all font-medium",
-                          isSelected
-                            ? "border-2 bg-[#1C3D2E]/20 text-[#1C3D2E]"
-                            : "bg-[#F3F4F6] text-[#6B7280] border-2 border-transparent"
-                        )}
-                        style={
-                          isSelected
-                            ? {
-                              borderColor: "#1C3D2E",
-                            }
-                            : {}
+                  <div className="text-center">
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                      className="w-14 h-14 rounded-full bg-primary flex items-center justify-center mx-auto mb-3"
+                    >
+                      <Check className="w-6 h-6 text-primary-foreground" />
+                    </motion.div>
+                    <p className="text-base font-semibold text-foreground">Gasto guardado</p>
+                  </div>
+                </motion.div>
+              ) : (
+                <motion.div
+                  initial={{ y: 40, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ duration: 0.25 }}
+                  className="flex-1 overflow-y-auto"
+                >
+                  <div className="px-6 pt-6 pb-8 space-y-5">
+                    {/* Title Hierarchy */}
+                    <div className="space-y-1">
+                      <h2 className="text-xl font-semibold tracking-tight text-foreground">
+                        {expense ? "Editar gasto" : "Nuevo gasto"}
+                      </h2>
+                      <p className="text-sm text-muted-foreground/70">
+                        Agrega un gasto a tu presupuesto
+                      </p>
+                    </div>
+
+                    {/* Description Input */}
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => {
+                        const { ref, ...restField } = field;
+                        return (
+                          <FormItem>
+                            <FormControl>
+                              <Input
+                                ref={(e) => {
+                                  if (typeof ref === "function") {
+                                    ref(e);
+                                  } else if (ref) {
+                                    (ref as React.MutableRefObject<HTMLInputElement | null>).current = e;
+                                  }
+                                  nameInputRef.current = e;
+                                }}
+                                placeholder="Ej: Café en Starbucks"
+                                className="text-lg font-medium border-0 rounded-none focus-visible:ring-0 px-0 h-auto py-2"
+                                {...restField}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
+                    />
+
+                    {/* Hero Amount Field */}
+                    <FormField
+                      control={form.control}
+                      name="amount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <div className="space-y-3">
+                              <motion.div
+                                animate={{
+                                  scale: amountFocused ? 1.03 : 1,
+                                }}
+                                transition={{ duration: 0.15 }}
+                                className="relative"
+                              >
+                                <div className="flex items-center justify-center gap-3">
+                                  <span className="text-lg text-muted-foreground">$</span>
+                                  <input
+                                    ref={amountInputRef}
+                                    type="text"
+                                    inputMode="decimal"
+                                    placeholder="0"
+                                    value={amountInputValue}
+                                    onFocus={() => {
+                                      setAmountFocused(true);
+                                      if (amount > 0 && amountInputValue === "") {
+                                        setAmountInputValue(amount.toString());
+                                      }
+                                    }}
+                                    onBlur={() => {
+                                      setAmountFocused(false);
+                                      const numValue = parseFloat(amountInputValue) || 0;
+                                      field.onChange(numValue);
+                                      setAmountInputValue(numValue > 0 ? numValue.toString() : "");
+                                      setAmountError(false);
+                                    }}
+                                    onChange={(e) => {
+                                      const rawValue = e.target.value;
+                                      if (rawValue === "" || /^\d*\.?\d*$/.test(rawValue)) {
+                                        setAmountInputValue(rawValue);
+                                        const numValue = parseFloat(rawValue) || 0;
+                                        field.onChange(numValue);
+                                        setAmountError(false);
+                                      }
+                                    }}
+                                    className={cn(
+                                      "text-5xl font-semibold tabular-nums bg-transparent border-none outline-none focus:outline-none text-center w-40",
+                                      "placeholder:text-muted-foreground",
+                                      amountError ? "text-destructive animate-[shake_0.5s]" : "text-foreground"
+                                    )}
+                                  />
+                                  <span className="text-lg text-muted-foreground">MXN</span>
+                                </div>
+                              </motion.div>
+                              {amountError && (
+                                <p className="text-xs text-destructive text-center">Ingresa un monto</p>
+                              )}
+                              {/* Quick Amount Suggestions */}
+                              {!amountInputValue && (
+                                <div className="flex items-center justify-center gap-2">
+                                  {[50, 100, 200].map((suggestion) => (
+                                    <motion.button
+                                      key={suggestion}
+                                      type="button"
+                                      whileTap={{ scale: 0.95 }}
+                                      onClick={() => {
+                                        setAmountInputValue(suggestion.toString());
+                                        field.onChange(suggestion);
+                                      }}
+                                      className="px-3 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-colors"
+                                    >
+                                      ${suggestion}
+                                    </motion.button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Date Picker Row */}
+                    <FormField
+                      control={form.control}
+                      name="date"
+                      render={({ field }) => {
+                        if (isMobile) {
+                          return (
+                            <FormItem>
+                              <FormControl>
+                                <div className="flex items-center gap-2">
+                                  <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                                  <input
+                                    type="date"
+                                    value={field.value}
+                                    onChange={(e) => field.onChange(e.target.value)}
+                                    className="flex-1 text-base font-medium text-foreground bg-transparent border-0 outline-none focus:outline-none"
+                                  />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          );
                         }
+                        return (
+                          <FormItem>
+                            <FormControl>
+                              <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                                <PopoverTrigger asChild>
+                                  <button
+                                    type="button"
+                                    className="w-full flex items-center gap-2 px-0 py-2 hover:opacity-70 transition-opacity"
+                                  >
+                                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                                    <span className="text-base font-medium text-foreground">
+                                      {formattedDate}
+                                    </span>
+                                  </button>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0 z-200" align="start">
+                                  <Calendar
+                                    mode="single"
+                                    selected={dateValue}
+                                    onSelect={(day) => {
+                                      if (day) {
+                                        const year = day.getFullYear();
+                                        const month = String(day.getMonth() + 1).padStart(2, "0");
+                                        const date = String(day.getDate()).padStart(2, "0");
+                                        field.onChange(`${year}-${month}-${date}`);
+                                        setCalendarOpen(false);
+                                      }
+                                    }}
+                                    initialFocus
+                                    classNames={{
+                                      day: "h-12 w-12 text-base",
+                                      day_button: "h-12 w-12 text-base",
+                                      month_caption: "h-12 text-lg mb-3 relative z-10",
+                                      nav: "absolute top-0 inset-x-0 justify-between z-30",
+                                      button_previous: "z-30",
+                                      button_next: "z-30",
+                                      caption_label: "text-lg font-semibold relative z-20",
+                                      weekdays: "flex flex-row mb-2 mt-1",
+                                      weekday: "h-10 text-sm text-center flex-1 flex items-center justify-center min-w-0",
+                                      month: "gap-3",
+                                      table: "w-full",
+                                    }}
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        );
+                      }}
+                    />
+
+                    {/* Category Selection */}
+                    <div
+                      className={cn(
+                        "flex gap-2 overflow-x-auto pb-1 -mx-6 px-6",
+                        categoryError && "bg-muted/40 rounded-lg p-2 transition-colors"
+                      )}
+                      style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                    >
+                      {topCategories.map((cat) => {
+                        const isSelected = selectedCategoryId === cat.id;
+                        const isSuggested = suggestedCategory === cat.id;
+                        return (
+                          <motion.button
+                            key={cat.id}
+                            type="button"
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => {
+                              form.setValue("expenseCategoryId", cat.id);
+                              setCategoryError(false);
+                              setSuggestedCategory(null);
+                            }}
+                            className={cn(
+                              "rounded-full px-3 py-1 text-sm font-medium shrink-0 transition-colors",
+                              isSelected
+                                ? "bg-primary/10 text-primary"
+                                : isSuggested
+                                  ? "bg-primary/5 text-primary border border-primary/20"
+                                  : "bg-muted/60 text-muted-foreground hover:bg-muted/80"
+                            )}
+                          >
+                            {cat.name}
+                          </motion.button>
+                        );
+                      })}
+                      <motion.button
+                        type="button"
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setCategoryPickerOpen(true)}
+                        className="rounded-full px-3 py-1 text-sm font-medium bg-muted/60 text-muted-foreground hover:bg-muted/80 shrink-0 transition-colors"
                       >
-                        <span className="text-sm">{cat.name}</span>
-                      </button>
-                    );
-                  })}
-                  <button
-                    type="button"
-                    onClick={() => setCategoryPickerOpen(true)}
-                    className="h-9 px-3 rounded-full bg-[#F3F4F6] text-[#6B7280] flex items-center shrink-0"
+                        + Más
+                      </motion.button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            {/* Bottom Action Area */}
+            {!showSuccess && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.1 }}
+                className="sticky bottom-0 bg-background border-t border-border/40 px-6 pt-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))] space-y-3"
+              >
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="w-full text-sm text-muted-foreground text-center py-2"
+                >
+                  Cancelar
+                </button>
+                <motion.div whileTap={{ scale: 0.97 }}>
+                  <Button
+                    type="submit"
+                    disabled={form.formState.isSubmitting || amount === 0 || !selectedCategoryId || !form.watch("name")}
+                    className="w-full h-12 rounded-xl font-medium disabled:opacity-50"
                   >
-                    <span className="text-sm font-medium">Ver más</span>
-                  </button>
-                </div>
-              </div>
-
-            </div>
-
-            <div className="sticky bottom-0 bg-white border-t border-[#F3F4F6] px-4 pt-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="text-sm text-[#6B7280] mb-3 block w-full text-center"
-              >
-                Cancelar
-              </button>
-              <Button
-                type="submit"
-                disabled={form.formState.isSubmitting || amount === 0 || !selectedCategoryId || !form.watch("name")}
-                className="w-full h-[52px] text-base font-bold rounded-[14px] bg-[#1C3D2E] hover:bg-[#1C3D2E]/90 text-white disabled:bg-[#9CA3AF] disabled:opacity-50 active:scale-[0.98] transition-transform"
-              >
-                {form.formState.isSubmitting ? "Guardando..." : "Guardar gasto"}
-              </Button>
-            </div>
+                    {form.formState.isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Guardando...
+                      </>
+                    ) : (
+                      "Guardar gasto"
+                    )}
+                  </Button>
+                </motion.div>
+              </motion.div>
+            )}
           </form>
         </Form>
       </ResponsiveSheet>

@@ -156,8 +156,7 @@ export function BudgetWizardV2({ incomeSources: initialSources, templates, categ
       setShowSuccess(true);
 
       setTimeout(() => {
-        router.push("/dashboard");
-        window.scrollTo(0, 0);
+        router.replace("/dashboard");
       }, 1500);
     });
   }
@@ -200,9 +199,15 @@ export function BudgetWizardV2({ incomeSources: initialSources, templates, categ
             >
               {currentStep === 1 ? "Cancelar" : <ArrowLeft className="h-5 w-5" />}
             </button>
-            <span className="text-[13px] text-[#6B7280]">
-              {currentStep} de 4
-            </span>
+            <div className="text-center">
+              <span className="text-[13px] text-[#6B7280] block">
+                Paso {currentStep} de 4
+              </span>
+              {currentStep === 1 && <span className="text-[11px] text-[#9CA3AF]">Información general</span>}
+              {currentStep === 2 && <span className="text-[11px] text-[#9CA3AF]">Ingresos</span>}
+              {currentStep === 3 && <span className="text-[11px] text-[#9CA3AF]">Deducciones</span>}
+              {currentStep === 4 && <span className="text-[11px] text-[#9CA3AF]">Distribución</span>}
+            </div>
             <button
               onClick={handleNext}
               disabled={

@@ -26,7 +26,7 @@ export function ResponsiveSheet({ open, onOpenChange, title, trigger, children, 
   const contentClassName = useMemo(
     () =>
       isMobile
-        ? "h-[90vh] max-h-[90vh] rounded-t-[24px] rounded-b-none border-none p-0 flex flex-col bg-[#FFFFFF]"
+        ? "h-[90vh] max-h-[90vh] rounded-t-3xl rounded-b-none border-none p-0 flex flex-col bg-background shadow-lg"
         : "overflow-y-auto w-[400px] sm:w-[440px] px-6 shadow-lg pt-6",
     [isMobile]
   );
@@ -63,21 +63,23 @@ export function ResponsiveSheet({ open, onOpenChange, title, trigger, children, 
         {isMobile ? (
           <>
             {showDragHandle && (
-              <div className="flex justify-center pt-3 pb-0 shrink-0">
-                <div className="w-8 h-1 bg-[#D1D5DB] rounded-full" />
+              <div className="flex justify-center pt-3 pb-4 shrink-0">
+                <div className="w-10 h-1.5 rounded-full bg-muted" />
               </div>
             )}
-            <SheetHeader className="px-4 pt-5 pb-0 shrink-0 border-none">
-              <SheetTitle className="text-[18px] font-bold text-[#111111]">{title}</SheetTitle>
+            <SheetHeader className="px-6 pt-0 pb-0 shrink-0 border-none">
+              <SheetTitle className={title ? "text-xl font-semibold tracking-tight" : "sr-only"}>
+                {title || "Dialog"}
+              </SheetTitle>
             </SheetHeader>
-            <div className="flex-1 overflow-y-auto px-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
+            <div className="flex-1 overflow-y-auto">
               {children}
             </div>
           </>
         ) : (
           <>
             <SheetHeader className="mb-4 p-0">
-              <SheetTitle>{title}</SheetTitle>
+              <SheetTitle className={title ? "" : "sr-only"}>{title || "Dialog"}</SheetTitle>
             </SheetHeader>
             {children}
           </>

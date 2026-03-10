@@ -12,12 +12,19 @@ const incomeSchema = z.object({
   amount: z.coerce.number().positive("El monto debe ser positivo"),
 });
 
-export type SerializedIncomeSource = Omit<IncomeSource, "amount"> & { amount: number };
+export type SerializedIncomeSource = Omit<IncomeSource, "amount" | "createdAt"> & {
+  amount: number;
+  createdAt: string;
+};
 
 function serializeIncomeSource(source: IncomeSource): SerializedIncomeSource {
   return {
-    ...source,
+    id: source.id,
+    userId: source.userId,
+    name: source.name,
     amount: Number(source.amount),
+    isActive: source.isActive,
+    createdAt: source.createdAt?.toISOString() ?? new Date().toISOString(),
   };
 }
 
