@@ -2,9 +2,9 @@
 
 import { useTransition, useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, ChevronDown, ChevronUp, Pencil, AlertCircle } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Plus, Trash2, ChevronDown, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -73,7 +73,6 @@ export function TemplateCard({
   const [swipedItemId, setSwipedItemId] = useState<string | null>(null);
   const [confirmDeleteText, setConfirmDeleteText] = useState("");
 
-  // Close swipe on outside click
   useEffect(() => {
     if (swipedItemId) {
       const handleClick = (e: MouseEvent) => {
@@ -88,10 +87,8 @@ export function TemplateCard({
   }, [swipedItemId]);
 
   const totalPlanned = template.items.reduce((sum, i) => sum + Number(i.plannedAmount), 0);
-  const percentOfIncome = totalIncome > 0 ? (totalPlanned / totalIncome) * 100 : 0;
-  const itemCount = template.items.length;
+  const remaining = totalIncome - totalPlanned;
 
-  // Calculate category totals and percentages
   const categoryTotals = useMemo(() => {
     const totals: Record<string, number> = {};
     template.items.forEach((item) => {
@@ -108,11 +105,6 @@ export function TemplateCard({
     });
     return pcts;
   }, [categoryTotals, totalPlanned]);
-
-  // Find highest expense amount
-  const highestAmount = useMemo(() => {
-    return Math.max(...template.items.map((i) => Number(i.plannedAmount)), 0);
-  }, [template.items]);
 
   function handleDeleteTemplate() {
     if (confirmDeleteText !== template.name) {
@@ -156,7 +148,6 @@ export function TemplateCard({
     router.push(`/presupuestos/nuevo?templateId=${template.id}`);
   }
 
-  // Initialize expanded sections
   useEffect(() => {
     if (expandedSections.size === 0) {
       const firstWithData = budgetCategories.find((bc) => {
@@ -175,328 +166,297 @@ export function TemplateCard({
 
   return (
     <div className="pb-6">
-      {/* Header Card */}
-      <div className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.04)] p-5 mb-6">
-        <div className="mb-4">
-          <h2 className="text-[18px] font-bold text-[#111111]">{template.name}</h2>
+      {/* Budget Overview Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.04)] p-6 mb-6"
+      >
+        <div className="mb-5">
+          <h2 className="text-[20px] font-bold text-[#111111] mb-1">{template.name}</h2>
+          <p className="text-[14px] text-[#6B7280]">Total asignado</p>
         </div>
 
-        {/* Stat Pills */}
-        <div className="flex gap-2 mb-4">
-          <Badge className="bg-[#F3F4F6] text-[#111111] border-0 px-3 py-1.5 text-[13px] font-bold">
-            {formatCurrency(totalPlanned)}
-          </Badge>
-          <Badge className="bg-[#F3F4F6] text-[#6B7280] border-0 px-3 py-1.5 text-[13px] font-medium">
-            {itemCount} {itemCount === 1 ? "gasto" : "gastos"}
-          </Badge>
-          <Badge
-            className={cn(
-              "px-3 py-1.5 text-[13px] font-medium border-0",
-              percentOfIncome > 50
-                ? "bg-[#FEF3C7] text-[#92400E]"
-                : percentOfIncome > 40
-                  ? "bg-[#FDE68A] text-[#78350F]"
-                  : "bg-[#D1FAE5] text-[#065F46]"
+        <div className="mb-6">
+          <div className="flex items-baseline gap-2 mb-4">
+            <span className="text-[32px] font-bold text-[#111111]">{formatCurrency(totalPlanned)}</span>
+            {totalIncome > 0 && (
+              <span className="text-[14px] text-[#6B7280]">
+                de {formatCurrency(totalIncome)}
+              </span>
             )}
-          >
-            {percentOfIncome.toFixed(1)}%
-          </Badge>
-        </div>
+          </div>
 
-        {/* Proportional Allocation Bar */}
-        <div className="mb-3">
-          <div className="h-2 bg-[#E5E7EB] rounded-full overflow-hidden flex">
+          {/* Category Progress Bars */}
+          <div className="space-y-3">
             {budgetCategories.map((bc) => {
-              const pct = categoryPercentages[bc.id] ?? 0;
+              const amount = categoryTotals[bc.id] ?? 0;
+              const percentage = categoryPercentages[bc.id] ?? 0;
               const color = CATEGORY_COLORS[bc.name] || "#6B7280";
+
               return (
-                <div
-                  key={bc.id}
-                  className="h-full"
-                  style={{
-                    width: `${pct}%`,
-                    backgroundColor: color,
-                  }}
-                />
-              );
-            })}
-          </div>
-          <div className="flex items-center justify-between mt-2 text-[11px] text-[#6B7280] font-medium">
-            {budgetCategories.map((bc) => {
-              const pct = categoryPercentages[bc.id] ?? 0;
-              const shortName = bc.name === "Necesidades" ? "Nec." : bc.name === "Gustos" ? "Gus." : "Aho.";
-              return (
-                <span key={bc.id}>
-                  {shortName} {pct.toFixed(1)}%
-                </span>
+                <div key={bc.id} className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[13px] font-medium text-[#111111]">{bc.name}</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[13px] font-semibold text-[#111111]">{formatCurrency(amount)}</span>
+                      <span className="text-[12px] text-[#6B7280]">{percentage.toFixed(1)}%</span>
+                    </div>
+                  </div>
+                  <div className="h-2 bg-[#F3F4F6] rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${percentage}%` }}
+                      transition={{ duration: 0.5, ease: "easeOut" }}
+                      className="h-full rounded-full"
+                      style={{ backgroundColor: color }}
+                    />
+                  </div>
+                </div>
               );
             })}
           </div>
         </div>
-      </div>
+      </motion.div>
 
-      {/* Sections */}
+      {/* Category Cards */}
       <div className="space-y-4">
         {budgetCategories.map((bc) => {
           const items = template.items.filter((i) => i.expenseCategory.budgetCategory.id === bc.id);
           const sectionTotal = categoryTotals[bc.id] ?? 0;
           const isExpanded = expandedSections.has(bc.id);
           const categoryColor = CATEGORY_COLORS[bc.name] || "#6B7280";
-
-          // Group items by subcategory
-          const groupedBySubcategory = items.reduce((acc, item) => {
-            const subcategoryId = item.expenseCategory.subcategory?.id ?? null;
-            const subcategoryName = item.expenseCategory.subcategory?.name ?? null;
-            const key = subcategoryId ?? "_none";
-
-            if (!acc[key]) {
-              acc[key] = {
-                subcategoryId,
-                subcategoryName,
-                items: [],
-                subcategoryTotal: 0,
-              };
-            }
-            acc[key].items.push(item);
-            return acc;
-          }, {} as Record<string, { subcategoryId: string | null; subcategoryName: string | null; items: typeof items; subcategoryTotal: number }>);
-
-          const groups = Object.values(groupedBySubcategory);
-          groups.sort((a, b) => {
-            if (a.subcategoryId === null && b.subcategoryId !== null) return 1;
-            if (a.subcategoryId !== null && b.subcategoryId === null) return -1;
-            if (a.subcategoryName && b.subcategoryName) {
-              return a.subcategoryName.localeCompare(b.subcategoryName, "es-MX");
-            }
-            return 0;
-          });
-
-          groups.forEach((group) => {
-            group.items.sort((a, b) =>
-              a.expenseCategory.name.localeCompare(b.expenseCategory.name, "es-MX")
-            );
-            group.subcategoryTotal = group.items.reduce((sum, item) => sum + Number(item.plannedAmount), 0);
-          });
-
-          const hasMultipleGroups = groups.length > 1 || groups[0]?.subcategoryId !== null;
+          const categoryPercentage = categoryPercentages[bc.id] ?? 0;
 
           return (
-            <div key={bc.id}>
-              {/* Section Header */}
-              <button
-                type="button"
-                className="flex items-center justify-between w-full h-12 px-4 bg-[#F8F8F6] rounded-xl mb-3 hover:bg-[#F3F4F6] transition-colors"
-                onClick={() => toggleSection(bc.id)}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className="h-2 w-2 rounded-sm"
-                    style={{ backgroundColor: categoryColor }}
-                  />
-                  <span className="text-[11px] font-bold text-[#111111] uppercase tracking-wider">
-                    {bc.name}
-                  </span>
-                  {items.length > 0 && (
-                    <Badge className="bg-white text-[#6B7280] border border-[#E5E7EB] px-2 py-0.5 text-[11px] font-medium">
-                      {items.length}
-                    </Badge>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[15px] font-bold text-[#111111]">
-                    {formatCurrency(sectionTotal)}
-                  </span>
-                  {isExpanded ? (
-                    <ChevronUp className="h-4 w-4 text-[#6B7280]" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 text-[#6B7280]" />
-                  )}
-                </div>
-              </button>
-
-              {/* Section Content */}
-              {isExpanded && (
-                <div className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.04)] overflow-hidden mb-4">
-                  {items.length === 0 ? (
-                    <div className="py-12 px-5 text-center">
-                      <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#F3F4F6] mb-3">
-                        <AlertCircle className="h-6 w-6 text-[#6B7280]" />
+            <motion.div
+              key={bc.id}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: budgetCategories.indexOf(bc) * 0.05 }}
+            >
+              {/* Category Card */}
+              <div className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.04)] overflow-hidden">
+                <button
+                  type="button"
+                  className="w-full flex items-center justify-between p-5 hover:bg-[#FAFAFA] transition-colors"
+                  onClick={() => toggleSection(bc.id)}
+                >
+                  <div className="flex items-center gap-4 flex-1">
+                    <div
+                      className="h-3 w-3 rounded-full shrink-0"
+                      style={{ backgroundColor: categoryColor }}
+                    />
+                    <div className="flex-1 text-left">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[16px] font-bold text-[#111111]">{bc.name}</span>
+                        {items.length > 0 && (
+                          <span className="text-[12px] text-[#6B7280] bg-[#F3F4F6] px-2 py-0.5 rounded-full">
+                            {items.length} {items.length === 1 ? "gasto" : "gastos"}
+                          </span>
+                        )}
                       </div>
-                      <p className="text-[13px] text-[#6B7280] mb-4">Sin gastos en esta categoría</p>
-                      <TemplateItemForm
-                        templateId={template.id}
-                        expenseCategories={expenseCategories}
-                        budgetCategories={budgetCategories}
-                        filterBudgetCategoryId={bc.id}
-                        existingItemCategoryIds={existingCategoryIds}
-                        onItemAdded={() => { }}
-                      >
-                        <Button
-                          variant="outline"
-                          className="h-11 w-full border-dashed border-[#D1D5DB] text-[#6B7280] hover:bg-[#F3F4F6]"
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Agregar gasto
-                        </Button>
-                      </TemplateItemForm>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[18px] font-bold text-[#111111]">{formatCurrency(sectionTotal)}</span>
+                        {totalPlanned > 0 && (
+                          <span className="text-[13px] text-[#6B7280]">{categoryPercentage.toFixed(1)}%</span>
+                        )}
+                      </div>
                     </div>
-                  ) : (
-                    <>
-                      {groups.map((group) => (
-                        <div key={group.subcategoryId ?? "_none"}>
-                          {hasMultipleGroups && group.subcategoryName && (
-                            <div className="flex items-center justify-between h-8 px-4 bg-white">
-                              <p className="text-[10px] font-semibold text-[#9CA3AF] uppercase tracking-wider">
-                                {group.subcategoryName}
-                              </p>
-                              <span className="text-[11px] text-[#9CA3AF] font-medium">
-                                {formatCurrency(group.subcategoryTotal)}
-                              </span>
-                            </div>
-                          )}
-                          {group.items.map((item, index) => {
-                            const isHighest = Number(item.plannedAmount) === highestAmount;
-                            const itemPct = sectionTotal > 0 ? (Number(item.plannedAmount) / sectionTotal) * 100 : 0;
-                            const isSwiped = swipedItemId === item.id;
+                  </div>
+                  <motion.div
+                    animate={{ rotate: isExpanded ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <ChevronDown className="h-5 w-5 text-[#6B7280] shrink-0" />
+                  </motion.div>
+                </button>
 
-                            return (
-                              <div
-                                key={item.id}
-                                data-item-id={item.id}
-                                className={cn(
-                                  "relative flex items-center gap-4 h-14 px-4 overflow-hidden",
-                                  index % 2 === 0 ? "bg-white" : "bg-[#FAFAFA]",
-                                  isHighest && "border-l-[3px] border-[#F59E0B]"
-                                )}
-                                onTouchStart={(e) => {
-                                  const touch = e.touches[0];
-                                  const startX = touch.clientX;
-                                  let moved = false;
-
-                                  const handleMove = (moveEvent: TouchEvent) => {
-                                    const currentX = moveEvent.touches[0].clientX;
-                                    const diff = startX - currentX;
-                                    if (Math.abs(diff) > 10) {
-                                      moved = true;
-                                    }
-                                    if (diff > 80) {
-                                      setSwipedItemId(item.id);
-                                    } else if (diff < -80) {
-                                      setSwipedItemId(null);
-                                    }
-                                  };
-
-                                  const handleEnd = () => {
-                                    if (!moved && swipedItemId === item.id) {
-                                      setSwipedItemId(null);
-                                    }
-                                    document.removeEventListener("touchmove", handleMove as EventListener);
-                                    document.removeEventListener("touchend", handleEnd);
-                                  };
-
-                                  document.addEventListener("touchmove", handleMove as EventListener);
-                                  document.addEventListener("touchend", handleEnd);
-                                }}
-                              >
-                                {/* Swipe Actions */}
-                                <div className={cn(
-                                  "absolute inset-y-0 right-0 flex items-center transition-transform duration-200 z-10",
-                                  isSwiped ? "translate-x-0" : "translate-x-full"
-                                )}>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-full w-16 bg-[#3B82F6] hover:bg-[#2563EB] rounded-l-lg rounded-r-none"
-                                    onClick={() => handleStartEdit({
-                                      id: item.id,
-                                      expenseCategoryId: item.expenseCategory.id,
-                                      plannedAmount: Number(item.plannedAmount),
-                                    })}
-                                  >
-                                    <Pencil className="h-4 w-4 text-white" />
-                                  </Button>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-full w-16 bg-[#DC2626] hover:bg-[#B91C1C] rounded-r-lg rounded-l-none"
-                                    onClick={() => handleDeleteItem(item.id)}
-                                  >
-                                    <Trash2 className="h-4 w-4 text-white" />
-                                  </Button>
+                {/* Expanded Content */}
+                <AnimatePresence>
+                  {isExpanded && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-5 pb-5 pt-2">
+                        {items.length === 0 ? (
+                          <div className="py-8 text-center">
+                            <p className="text-[14px] text-[#6B7280] mb-4">No hay gastos en esta categoría</p>
+                            <TemplateItemForm
+                              templateId={template.id}
+                              expenseCategories={expenseCategories}
+                              budgetCategories={budgetCategories}
+                              filterBudgetCategoryId={bc.id}
+                              existingItemCategoryIds={existingCategoryIds}
+                              currentCategoryTotal={sectionTotal}
+                              onItemAdded={() => router.refresh()}
+                            >
+                              <div className="bg-[#F8F9FA] border-2 border-dashed border-[#E5E7EB] rounded-xl p-4 hover:bg-[#F3F4F6] transition-colors cursor-pointer">
+                                <div className="flex items-center justify-center gap-2 text-[#6B7280]">
+                                  <Plus className="h-5 w-5" />
+                                  <span className="text-[14px] font-medium">Agregar gasto</span>
                                 </div>
+                                <p className="text-[12px] text-[#9CA3AF] mt-1 text-center">Toca para agregar un gasto a esta categoría</p>
+                              </div>
+                            </TemplateItemForm>
+                          </div>
+                        ) : (
+                          <div className="space-y-1">
+                            {items.map((item, index) => {
+                              const itemPct = sectionTotal > 0 ? (Number(item.plannedAmount) / sectionTotal) * 100 : 0;
+                              const isSwiped = swipedItemId === item.id;
 
-                                {/* Main Row Content */}
-                                <div className={cn(
-                                  "flex items-center gap-4 flex-1 transition-transform duration-200",
-                                  isSwiped && "-translate-x-32"
-                                )}>
-                                  <div
-                                    className="h-9 w-9 rounded-lg flex items-center justify-center shrink-0 text-lg"
-                                    style={{
-                                      backgroundColor: `${item.expenseCategory.color}1F`,
-                                    }}
-                                  >
-                                    {getCategoryIcon(item.expenseCategory)}
+                              return (
+                                <motion.div
+                                  key={item.id}
+                                  initial={{ opacity: 0, scale: 0.95 }}
+                                  animate={{ opacity: 1, scale: 1 }}
+                                  transition={{ duration: 0.2, delay: index * 0.03 }}
+                                  data-item-id={item.id}
+                                  className={cn(
+                                    "relative flex items-center gap-3 p-3 rounded-xl overflow-hidden",
+                                    "hover:bg-[#FAFAFA] transition-colors",
+                                    isSwiped && "bg-[#FAFAFA]"
+                                  )}
+                                  onTouchStart={(e) => {
+                                    const touch = e.touches[0];
+                                    const startX = touch.clientX;
+                                    let moved = false;
+
+                                    const handleMove = (moveEvent: TouchEvent) => {
+                                      const currentX = moveEvent.touches[0].clientX;
+                                      const diff = startX - currentX;
+                                      if (Math.abs(diff) > 10) {
+                                        moved = true;
+                                      }
+                                      if (diff > 80) {
+                                        setSwipedItemId(item.id);
+                                      } else if (diff < -80) {
+                                        setSwipedItemId(null);
+                                      }
+                                    };
+
+                                    const handleEnd = () => {
+                                      if (!moved && swipedItemId === item.id) {
+                                        setSwipedItemId(null);
+                                      }
+                                      document.removeEventListener("touchmove", handleMove as EventListener);
+                                      document.removeEventListener("touchend", handleEnd);
+                                    };
+
+                                    document.addEventListener("touchmove", handleMove as EventListener);
+                                    document.addEventListener("touchend", handleEnd);
+                                  }}
+                                >
+                                  {/* Swipe Actions */}
+                                  <div className={cn(
+                                    "absolute inset-y-0 right-0 flex items-center transition-transform duration-200 z-10",
+                                    isSwiped ? "translate-x-0" : "translate-x-full"
+                                  )}>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-full w-14 bg-[#3B82F6] hover:bg-[#2563EB] rounded-l-xl rounded-r-none"
+                                      onClick={() => handleStartEdit({
+                                        id: item.id,
+                                        expenseCategoryId: item.expenseCategory.id,
+                                        plannedAmount: Number(item.plannedAmount),
+                                      })}
+                                    >
+                                      <Pencil className="h-4 w-4 text-white" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-full w-14 bg-[#DC2626] hover:bg-[#B91C1C] rounded-r-xl rounded-l-none"
+                                      onClick={() => handleDeleteItem(item.id)}
+                                    >
+                                      <Trash2 className="h-4 w-4 text-white" />
+                                    </Button>
                                   </div>
-                                  <div className="flex-1 min-w-0">
-                                    <p className="text-[15px] font-medium text-[#111111] truncate">
-                                      {item.expenseCategory.name}
-                                    </p>
-                                    {hasMultipleGroups && (
-                                      <p className="text-[11px] text-[#6B7280]">
-                                        {group.subcategoryName || "Gasto Variable"}
-                                      </p>
-                                    )}
-                                  </div>
-                                  <div className="text-right shrink-0">
-                                    <p
-                                      className="text-[16px] font-bold text-[#111111] tabular-nums cursor-pointer hover:text-[#1C3D2E] transition-colors"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleStartEdit({
-                                          id: item.id,
-                                          expenseCategoryId: item.expenseCategory.id,
-                                          plannedAmount: Number(item.plannedAmount),
-                                        });
+
+                                  {/* Main Row Content */}
+                                  <div className={cn(
+                                    "flex items-center gap-3 flex-1 transition-transform duration-200",
+                                    isSwiped && "-translate-x-28"
+                                  )}>
+                                    {/* Icon Avatar */}
+                                    <div
+                                      className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 text-lg shadow-sm"
+                                      style={{
+                                        backgroundColor: `${item.expenseCategory.color}15`,
                                       }}
                                     >
-                                      {formatCurrency(Number(item.plannedAmount))}
-                                    </p>
-                                    <p className="text-[11px] text-[#22C55E] font-medium">
-                                      {itemPct.toFixed(1)}%
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ))}
+                                      {getCategoryIcon(item.expenseCategory)}
+                                    </div>
 
-                      {/* Add Expense Button */}
-                      <div className="p-4 border-t border-[#F3F4F6]">
-                        <TemplateItemForm
-                          templateId={template.id}
-                          expenseCategories={expenseCategories}
-                          budgetCategories={budgetCategories}
-                          filterBudgetCategoryId={bc.id}
-                          existingItemCategoryIds={existingCategoryIds}
-                          onItemAdded={() => { }}
-                        >
-                          <Button
-                            variant="outline"
-                            className="h-11 w-full border-dashed border-[#D1D5DB] text-[#6B7280] hover:bg-[#F3F4F6]"
-                          >
-                            <Plus className="h-4 w-4 mr-2" />
-                            Agregar gasto {hasMultipleGroups ? (groups[0]?.subcategoryName ? "fijo" : "variable") : ""}
-                          </Button>
-                        </TemplateItemForm>
+                                    {/* Name and Percentage */}
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-[15px] font-medium text-[#111111] truncate">
+                                        {item.expenseCategory.name}
+                                      </p>
+                                      <p className="text-[12px] text-[#6B7280]">{itemPct.toFixed(1)}% de {bc.name}</p>
+                                    </div>
+
+                                    {/* Amount */}
+                                    <div className="text-right shrink-0">
+                                      <p
+                                        className="text-[16px] font-bold text-[#111111] tabular-nums cursor-pointer hover:text-[#1C3D2E] transition-colors"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleStartEdit({
+                                            id: item.id,
+                                            expenseCategoryId: item.expenseCategory.id,
+                                            plannedAmount: Number(item.plannedAmount),
+                                          });
+                                        }}
+                                      >
+                                        {formatCurrency(Number(item.plannedAmount))}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </motion.div>
+                              );
+                            })}
+
+                            {/* Add Expense CTA */}
+                            <motion.div
+                              initial={{ opacity: 0 }}
+                              animate={{ opacity: 1 }}
+                              transition={{ delay: items.length * 0.03 }}
+                              className="mt-3"
+                            >
+                              <TemplateItemForm
+                                templateId={template.id}
+                                expenseCategories={expenseCategories}
+                                budgetCategories={budgetCategories}
+                                filterBudgetCategoryId={bc.id}
+                                existingItemCategoryIds={existingCategoryIds}
+                                currentCategoryTotal={sectionTotal}
+                                onItemAdded={() => router.refresh()}
+                              >
+                                <div className="bg-[#F8F9FA] border-2 border-dashed border-[#E5E7EB] rounded-xl p-4 hover:bg-[#F3F4F6] transition-colors cursor-pointer">
+                                  <div className="flex items-center justify-center gap-2 text-[#6B7280]">
+                                    <Plus className="h-5 w-5" />
+                                    <span className="text-[14px] font-medium">Agregar gasto</span>
+                                  </div>
+                                  <p className="text-[12px] text-[#9CA3AF] mt-1 text-center">Toca para agregar otro gasto a esta categoría</p>
+                                </div>
+                              </TemplateItemForm>
+                            </motion.div>
+                          </div>
+                        )}
                       </div>
-                    </>
+                    </motion.div>
                   )}
-                </div>
-              )}
-            </div>
+                </AnimatePresence>
+              </div>
+            </motion.div>
           );
         })}
       </div>
@@ -509,6 +469,13 @@ export function TemplateCard({
           budgetCategories={budgetCategories}
           filterBudgetCategoryId={expenseCategories.find((c) => c.id === editingItem.expenseCategoryId)?.budgetCategory.id}
           existingItemCategoryIds={existingCategoryIds}
+          currentCategoryTotal={(() => {
+            const budgetCatId = expenseCategories.find((c) => c.id === editingItem.expenseCategoryId)?.budgetCategory.id;
+            if (!budgetCatId) return 0;
+            return template.items
+              .filter((i) => i.expenseCategory.budgetCategory.id === budgetCatId)
+              .reduce((sum, i) => sum + Number(i.plannedAmount), 0);
+          })()}
           editingItem={{
             expenseCategoryId: editingItem.expenseCategoryId,
             plannedAmount: editingItem.plannedAmount,
@@ -529,7 +496,7 @@ export function TemplateCard({
       )}
 
       {/* Delete Button */}
-      <div className="mt-6">
+      <div className="mt-6 mb-24">
         <Dialog
           open={deleteOpen}
           onOpenChange={(open) => {
@@ -596,23 +563,37 @@ export function TemplateCard({
         </Dialog>
       </div>
 
-      {/* Bottom Fixed Bar */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#F3F4F6] p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] z-50">
+      {/* Bottom Summary Bar */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="fixed bottom-0 left-0 right-0 bg-white border-t border-[#F3F4F6] p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] z-50 shadow-[0_-4px_12px_rgba(0,0,0,0.04)]"
+      >
         <div className="max-w-5xl mx-auto">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-[13px] text-[#6B7280] mb-0.5">Total</p>
-              <p className="text-[18px] font-bold text-[#111111]">{formatCurrency(totalPlanned)}</p>
+              <p className="text-[12px] text-[#6B7280] mb-0.5">Total asignado</p>
+              <p className="text-[20px] font-bold text-[#111111]">{formatCurrency(totalPlanned)}</p>
             </div>
-            <Button
-              className="h-9 bg-[#1C3D2E] hover:bg-[#1C3D2E]/90 text-white rounded-xl px-6"
-              onClick={handleUseTemplate}
-            >
-              Crear presupuesto
-            </Button>
+            <div className="text-right">
+              <p className="text-[12px] text-[#6B7280] mb-0.5">Disponible</p>
+              <p className={cn(
+                "text-[20px] font-bold",
+                remaining >= 0 ? "text-[#10B981]" : "text-[#DC2626]"
+              )}>
+                {formatCurrency(Math.abs(remaining))}
+              </p>
+            </div>
           </div>
+          <Button
+            className="w-full h-12 bg-[#1C3D2E] hover:bg-[#1C3D2E]/90 text-white rounded-xl font-medium"
+            onClick={handleUseTemplate}
+          >
+            Crear presupuesto
+          </Button>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

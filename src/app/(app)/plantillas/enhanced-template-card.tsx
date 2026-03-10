@@ -1,6 +1,6 @@
 "use client";
 
-import { GripVertical, Plus } from "lucide-react";
+import { GripVertical, Plus, Copy } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ type Props = {
   totalIncome: number;
   onClick: () => void;
   onUse: () => void;
+  onDuplicate?: () => void;
   lastUsed?: string | null;
 };
 
@@ -30,7 +31,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   Ahorro: "#10B981",
 };
 
-export function EnhancedTemplateCard({ template, totalIncome, onClick, onUse, lastUsed }: Props) {
+export function EnhancedTemplateCard({ template, totalIncome, onClick, onUse, onDuplicate, lastUsed }: Props) {
   const totalPlanned = template.items.reduce((sum, i) => sum + Number(i.plannedAmount), 0);
   const percentOfIncome = totalIncome > 0 ? ((totalPlanned / totalIncome) * 100).toFixed(1) : "—";
   const itemCount = template.items.length;
@@ -75,6 +76,20 @@ export function EnhancedTemplateCard({ template, totalIncome, onClick, onUse, la
             )}
           </div>
           <div className="flex items-center gap-2">
+            {onDuplicate && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-[#6B7280] hover:text-[#111111] hover:bg-[#F3F4F6] hidden md:flex"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDuplicate();
+                }}
+                title="Duplicar plantilla"
+              >
+                <Copy className="h-4 w-4" />
+              </Button>
+            )}
             <GripVertical className="h-4 w-4 text-[#D1D5DB]" />
           </div>
         </div>
@@ -99,18 +114,34 @@ export function EnhancedTemplateCard({ template, totalIncome, onClick, onUse, la
           </div>
         )}
 
-        <div className="flex items-center justify-between">
-          <p className="text-[20px] font-bold text-[#111111]">{formatCurrency(totalPlanned)}</p>
-          <Button
-            size="sm"
-            className="h-9 px-4 rounded-xl bg-[#1C3D2E] hover:bg-[#1C3D2E]/90 text-white text-[13px] font-medium"
-            onClick={(e) => {
-              e.stopPropagation();
-              onUse();
-            }}
-          >
-            Agregar gastos
-          </Button>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-[20px] font-bold text-[#111111]">{formatCurrency(totalPlanned)}</p>
+            <Button
+              size="sm"
+              className="h-9 px-4 rounded-xl bg-[#1C3D2E] hover:bg-[#1C3D2E]/90 text-white text-[13px] font-medium"
+              onClick={(e) => {
+                e.stopPropagation();
+                onUse();
+              }}
+            >
+              Agregar gastos
+            </Button>
+          </div>
+          {onDuplicate && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full h-9 rounded-xl border-[#E5E7EB] text-[#6B7280] hover:bg-[#F3F4F6] text-[13px] font-medium md:hidden"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDuplicate();
+              }}
+            >
+              <Copy className="h-4 w-4 mr-2" />
+              Duplicar plantilla
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

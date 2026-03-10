@@ -177,6 +177,93 @@ export async function deleteTemplate(id: string): Promise<ActionResult> {
   }
 }
 
+export async function duplicateTemplate(id: string): Promise<ActionResult<TemplateWithItems>> {
+  try {
+    const user = await getCurrentUser();
+    const originalTemplate = await prisma.budgetTemplate.findFirst({
+      where: { id, userId: user.id },
+      include: {
+        items: true,
+      },
+    });
+
+    if (!originalTemplate) {
+      return { success: false, error: "Plantilla no encontrada" };
+    }
+
+    const newTemplate = await prisma.budgetTemplate.create({
+      data: {
+        userId: user.id,
+        name: `${originalTemplate.name} (Copia)`,
+      },
+    });
+
+    if (originalTemplate.items.length > 0) {
+      await prisma.budgetTemplateItem.createMany({
+        data: originalTemplate.items.map((item) => ({
+          templateId: newTemplate.id,
+          expenseCategoryId: item.expenseCategoryId,
+          plannedAmount: item.plannedAmount,
+        })),
+      });
+    }
+
+    const duplicatedTemplate = await prisma.budgetTemplate.findUnique({
+      where: { id: newTemplate.id },
+      include: {
+        items: {
+          include: { expenseCategory: { include: { budgetCategory: true, subcategory: true } } },
+          orderBy: { expenseCategory: { name: "asc" } },
+        },
+      },
+    });
+
+    if (!duplicatedTemplate) {
+      return { success: false, error: "Error al crear la copia" };
+    }
+
+    const serialized: TemplateWithItems = {
+      id: duplicatedTemplate.id,
+      userId: duplicatedTemplate.userId,
+      name: duplicatedTemplate.name,
+      createdAt: (duplicatedTemplate as any).createdAt?.toISOString() ?? new Date().toISOString(),
+      updatedAt: (duplicatedTemplate as any).updatedAt?.toISOString() ?? new Date().toISOString(),
+      items: duplicatedTemplate.items.map((item) => ({
+        id: item.id,
+        templateId: item.templateId,
+        expenseCategoryId: item.expenseCategoryId,
+        plannedAmount: Number(item.plannedAmount),
+        expenseCategory: {
+          id: item.expenseCategory.id,
+          userId: item.expenseCategory.userId,
+          name: item.expenseCategory.name,
+          color: item.expenseCategory.color,
+          categoryId: item.expenseCategory.categoryId,
+          subcategoryId: item.expenseCategory.subcategoryId,
+          budgetCategory: {
+            id: item.expenseCategory.budgetCategory.id,
+            name: item.expenseCategory.budgetCategory.name,
+            order: item.expenseCategory.budgetCategory.order,
+            defaultPercentage: Number(item.expenseCategory.budgetCategory.defaultPercentage),
+          },
+          subcategory: item.expenseCategory.subcategory
+            ? {
+              id: item.expenseCategory.subcategory.id,
+              categoryId: item.expenseCategory.subcategory.categoryId,
+              name: item.expenseCategory.subcategory.name,
+            }
+            : null,
+        },
+      })),
+    };
+
+    revalidatePath("/plantillas");
+    return { success: true, data: serialized };
+  } catch (e) {
+    return { success: false, error: e instanceof Error ? e.message : "Error desconocido" };
+  }
+}
+
 type SerializedTemplateItemBasic = Omit<BudgetTemplateItem, "plannedAmount"> & { plannedAmount: number };
 
 export async function upsertTemplateItem(
