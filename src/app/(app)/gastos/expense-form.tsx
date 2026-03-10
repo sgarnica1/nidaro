@@ -67,6 +67,7 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
   const [amountFocused, setAmountFocused] = useState(false);
   const [amountInputValue, setAmountInputValue] = useState<string>("");
   const amountInputRef = useRef<HTMLInputElement>(null);
+  const [nameFocused, setNameFocused] = useState(false);
 
   const form = useForm<FormValues, unknown, FormValues>({
     resolver: zodResolver(schema) as never,
@@ -78,6 +79,19 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
       date: expense ? new Date(expense.date).toISOString().split("T")[0] : todayString(),
     },
   });
+
+  useEffect(() => {
+    if (!open && !expense) {
+      form.reset({
+        budgetId,
+        expenseCategoryId: "",
+        name: "",
+        amount: 0,
+        date: todayString(),
+      });
+      setAmountInputValue("");
+    }
+  }, [open, expense, budgetId, form]);
 
   const amount = form.watch("amount");
   const selectedCategoryId = form.watch("expenseCategoryId");
@@ -128,12 +142,21 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
 
     if (result.success) {
       setOpen(false);
-      form.reset({ ...form.getValues(), name: "", amount: 0, date: todayString() });
+      if (!expense) {
+        form.reset({
+          budgetId,
+          expenseCategoryId: "",
+          name: "",
+          amount: 0,
+          date: todayString(),
+        });
+        setAmountInputValue("");
+      }
       onClose?.();
     }
   }
 
-  const dateValue = form.watch("date") ? new Date(form.watch("date") + "T12:00:00") : undefined;
+  const dateValue = form.watch("date") ? new Date(form.watch("date") + "T00:00:00") : undefined;
   const formattedDate = dateValue ? format(dateValue, "d MMM yyyy", { locale: es }) : "Selecciona fecha";
 
   return (
@@ -147,6 +170,39 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
             <div className="flex-1 overflow-y-auto">
+              <div className="px-4 py-5">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <div className="relative">
+                          <Textarea
+                            placeholder="Descripción"
+                            className="min-h-[60px] max-h-[120px] bg-transparent border-none rounded-none px-0 py-0 text-[24px] font-semibold leading-tight resize-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-[#9CA3AF] placeholder:text-[24px] placeholder:font-semibold"
+                            onFocus={() => setNameFocused(true)}
+                            onBlur={() => setNameFocused(false)}
+                            {...field}
+                          />
+                          <div
+                            className={cn(
+                              "absolute bottom-0 left-0 right-0 h-[2px] transition-transform duration-300 origin-center",
+                              field.value && field.value.length > 0 || nameFocused
+                                ? "bg-[#1C3D2E] scale-x-100"
+                                : "bg-[#1C3D2E] scale-x-0"
+                            )}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="h-[1px] bg-[#F3F4F6]" />
+
               <div className="pt-5 pb-4">
                 <FormField
                   control={form.control}
@@ -244,11 +300,25 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
                               selected={dateValue}
                               onSelect={(day) => {
                                 if (day) {
-                                  field.onChange(day.toISOString().split("T")[0]);
+                                  const year = day.getFullYear();
+                                  const month = String(day.getMonth() + 1).padStart(2, "0");
+                                  const date = String(day.getDate()).padStart(2, "0");
+                                  field.onChange(`${year}-${month}-${date}`);
                                   setCalendarOpen(false);
                                 }
                               }}
                               initialFocus
+                              classNames={{
+                                day: "h-12 w-12 text-base",
+                                day_button: "h-12 w-12 text-base",
+                                month_caption: "h-12 text-lg mb-3 relative z-10",
+                                nav: "relative mb-3",
+                                caption_label: "text-lg font-semibold",
+                                weekdays: "flex flex-row mb-2 mt-1",
+                                weekday: "h-10 text-sm text-center flex-1 flex items-center justify-center min-w-0",
+                                month: "gap-3",
+                                table: "w-full",
+                              }}
                             />
                           </PopoverContent>
                         </Popover>
@@ -308,26 +378,6 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
                 </div>
               </div>
 
-              <div className="h-[1px] bg-[#F3F4F6]" />
-
-              <div className="px-4 py-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Descripción"
-                          className="min-h-[100px] bg-[#F8F8F6] border-none rounded-xl px-[14px] py-[14px] text-[15px] leading-normal resize-none focus-visible:ring-0 focus-visible:ring-offset-0"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
             </div>
 
             <div className="sticky bottom-0 bg-white border-t border-[#F3F4F6] px-4 pt-4 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">

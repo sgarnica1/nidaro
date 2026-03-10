@@ -39,7 +39,7 @@ export function Step1GeneralInfo({ form, templates, dateRange, onDateRangeClick 
   }, []);
 
   const formattedDateRange = dateRange?.from && dateRange?.to
-    ? `${format(dateRange.from, "d MMM", { locale: es })} – ${format(dateRange.to, "d MMM yyyy", { locale: es })}`
+    ? `${format(new Date(dateRange.from.getFullYear(), dateRange.from.getMonth(), dateRange.from.getDate()), "d MMM", { locale: es })} – ${format(new Date(dateRange.to.getFullYear(), dateRange.to.getMonth(), dateRange.to.getDate()), "d MMM yyyy", { locale: es })}`
     : "Selecciona fechas";
 
   return (

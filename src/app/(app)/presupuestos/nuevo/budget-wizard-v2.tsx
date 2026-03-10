@@ -62,7 +62,7 @@ export function BudgetWizardV2({ incomeSources: initialSources, templates, categ
     if (pathname !== "/presupuestos/nuevo") {
       return;
     }
-    
+
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = "";
@@ -85,12 +85,12 @@ export function BudgetWizardV2({ incomeSources: initialSources, templates, categ
   const deductions = form.watch("deductions");
   const selectedIncome = initialSources.filter((s) => selectedIncomeIds.includes(s.id) && s.isActive);
   const grossIncome = selectedIncome.reduce((sum, s) => sum + s.amount, 0);
-  
+
   const totalDeductions = deductions.reduce((sum, d) => {
     const v = Number(d.value) || 0;
     return d.type === "PERCENTAGE" ? sum + (grossIncome * v) / 100 : sum + v;
   }, 0);
-  
+
   const availableIncome = grossIncome - totalDeductions;
 
   const canProceedStep1 = form.watch("startDate") && form.watch("endDate");
@@ -100,8 +100,14 @@ export function BudgetWizardV2({ incomeSources: initialSources, templates, categ
   function handleDateRangeSelect(range: DateRange | undefined) {
     setDateRange(range);
     if (range?.from && range?.to) {
-      form.setValue("startDate", range.from.toISOString().split("T")[0], { shouldValidate: true });
-      form.setValue("endDate", range.to.toISOString().split("T")[0], { shouldValidate: true });
+      const startYear = range.from.getFullYear();
+      const startMonth = String(range.from.getMonth() + 1).padStart(2, "0");
+      const startDate = String(range.from.getDate()).padStart(2, "0");
+      const endYear = range.to.getFullYear();
+      const endMonth = String(range.to.getMonth() + 1).padStart(2, "0");
+      const endDate = String(range.to.getDate()).padStart(2, "0");
+      form.setValue("startDate", `${startYear}-${startMonth}-${startDate}`, { shouldValidate: true });
+      form.setValue("endDate", `${endYear}-${endMonth}-${endDate}`, { shouldValidate: true });
       setDateRangePickerOpen(false);
     }
   }
@@ -133,7 +139,7 @@ export function BudgetWizardV2({ incomeSources: initialSources, templates, categ
   async function handleFinish(percentages: { categoryId: string; percentage: number }[]) {
     startTransition(async () => {
       const values = form.getValues();
-      
+
       const budgetResult = await createBudget(values);
       if (!budgetResult.success) {
         return;
@@ -151,15 +157,16 @@ export function BudgetWizardV2({ incomeSources: initialSources, templates, categ
 
       setTimeout(() => {
         router.push("/dashboard");
+        window.scrollTo(0, 0);
       }, 1500);
     });
   }
 
   const dateValue = form.watch("startDate") && form.watch("endDate")
     ? {
-        from: new Date(form.watch("startDate")),
-        to: new Date(form.watch("endDate")),
-      }
+      from: new Date(form.watch("startDate") + "T00:00:00"),
+      to: new Date(form.watch("endDate") + "T00:00:00"),
+    }
     : undefined;
 
   if (pathname !== "/presupuestos/nuevo") {
@@ -278,8 +285,8 @@ export function BudgetWizardV2({ incomeSources: initialSources, templates, categ
       />
 
       {showExitConfirm && (
-        <div className="fixed inset-0 z-[60] bg-black/40 flex items-end md:items-center justify-center p-4">
-          <div className="bg-white rounded-t-2xl md:rounded-2xl w-full max-w-sm p-6 space-y-4">
+        <div className="fixed inset-0 z-[60] bg-black/40 flex items-end md:items-center justify-center w-full">
+          <div className="bg-white rounded-t-2xl md:rounded-2xl w-full p-6 space-y-4">
             <h3 className="text-[18px] font-bold text-[#111111]">¿Salir?</h3>
             <p className="text-[15px] text-[#6B7280]">Perderás los cambios</p>
             <div className="flex gap-3">

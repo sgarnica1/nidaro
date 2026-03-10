@@ -55,7 +55,9 @@ export function GastosClient({
   }, [expenses]);
 
   const filteredExpenses = useMemo(() => {
-    if (!selectedMonth) return expenses;
+    if (!selectedMonth) {
+      return expenses;
+    }
     return expenses.filter((exp) => {
       const date = new Date(exp.date);
       return getMonthKey(date) === selectedMonth;
@@ -98,7 +100,7 @@ export function GastosClient({
           </p>
           <p className="text-[13px] text-[#6B7280]">
             {currentMonthCount} {currentMonthCount === 1 ? "gasto" : "gastos"}{" "}
-            {monthLabel ? `en ${monthLabel}` : "este mes"}
+            {monthLabel ? `en ${monthLabel}` : "en total"}
           </p>
         </div>
 
