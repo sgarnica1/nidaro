@@ -51,6 +51,7 @@ export default async function DashboardPage({
     : await getActiveBudget();
 
   if (!selectedBudget) {
+    const hasExpiredBudgets = allBudgets.length > 0;
     return (
       <div className="space-y-6">
         <div>
@@ -59,11 +60,15 @@ export default async function DashboardPage({
         </div>
         <EmptyState
           icon="receipt"
-          title="Presupuesto no encontrado"
-          description="El presupuesto que buscas no está disponible. Regresa al dashboard para ver tu presupuesto activo."
+          title={hasExpiredBudgets ? "No hay presupuesto activo" : "Presupuesto no encontrado"}
+          description={
+            hasExpiredBudgets
+              ? "Todos tus presupuestos han expirado. Crea uno nuevo para continuar."
+              : "El presupuesto que buscas no está disponible. Regresa al dashboard para ver tu presupuesto activo."
+          }
           action={{
-            label: "Ver presupuesto activo",
-            href: "/dashboard",
+            label: hasExpiredBudgets ? "Crear nuevo presupuesto" : "Ver presupuesto activo",
+            href: hasExpiredBudgets ? "/presupuestos/nuevo" : "/dashboard",
           }}
         />
       </div>
@@ -134,9 +139,9 @@ export default async function DashboardPage({
           },
           subcategory: p.expenseCategory.subcategory
             ? {
-                id: p.expenseCategory.subcategory.id,
-                name: p.expenseCategory.subcategory.name,
-              }
+              id: p.expenseCategory.subcategory.id,
+              name: p.expenseCategory.subcategory.name,
+            }
             : null,
         },
       }))}

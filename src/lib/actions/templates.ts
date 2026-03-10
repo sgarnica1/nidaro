@@ -27,7 +27,9 @@ type SerializedTemplateItem = Omit<BudgetTemplateItem, "plannedAmount"> & {
 
 export type TemplateItemWithCategory = SerializedTemplateItem;
 
-export type TemplateWithItems = BudgetTemplate & {
+export type TemplateWithItems = Omit<BudgetTemplate, "createdAt" | "updatedAt"> & {
+  createdAt: string;
+  updatedAt: string;
   items: TemplateItemWithCategory[];
 };
 
@@ -45,9 +47,15 @@ export async function getTemplates(): Promise<TemplateWithItems[]> {
   });
 
   return rows.map((template) => ({
-    ...template,
+    id: template.id,
+    userId: template.userId,
+    name: template.name,
+    createdAt: (template as any).createdAt?.toISOString() ?? new Date().toISOString(),
+    updatedAt: (template as any).updatedAt?.toISOString() ?? new Date().toISOString(),
     items: template.items.map((item) => ({
-      ...item,
+      id: item.id,
+      templateId: item.templateId,
+      expenseCategoryId: item.expenseCategoryId,
       plannedAmount: Number(item.plannedAmount),
       expenseCategory: {
         id: item.expenseCategory.id,
@@ -89,7 +97,11 @@ export async function getTemplate(id: string): Promise<TemplateWithItems | null>
   if (!row) return null;
 
   return {
-    ...row,
+    id: row.id,
+    userId: row.userId,
+    name: row.name,
+    createdAt: (row as any).createdAt?.toISOString() ?? new Date().toISOString(),
+    updatedAt: (row as any).updatedAt?.toISOString() ?? new Date().toISOString(),
     items: row.items.map((item) => ({
       ...item,
       plannedAmount: Number(item.plannedAmount),

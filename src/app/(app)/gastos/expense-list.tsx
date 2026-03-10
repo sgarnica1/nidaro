@@ -166,12 +166,12 @@ export function ExpenseList({ expenses, expenseCategories, budgetId, onAddExpens
                       {getCategoryIcon(category)}
                     </div>
                     <div className="flex-1 min-w-0 text-left">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className="text-[15px] font-medium text-[#111111] truncate">
-                          {expense.name}
-                        </p>
+                      <p className="text-[15px] font-medium text-[#111111] mb-1 line-clamp-2 break-words">
+                        {expense.name}
+                      </p>
+                      <div className="flex items-center gap-2 flex-wrap">
                         <Badge
-                          className="text-[11px] px-2 py-0.5 rounded-full border-0"
+                          className="text-[11px] px-2 py-0.5 rounded-full border-0 shrink-0"
                           style={{
                             backgroundColor: `${category.color}1A`,
                             color: darkenHex(category.color),
@@ -179,10 +179,10 @@ export function ExpenseList({ expenses, expenseCategories, budgetId, onAddExpens
                         >
                           {category.name}
                         </Badge>
+                        <p className="text-[12px] text-[#6B7280]">
+                          {formatDate(expense.date)}
+                        </p>
                       </div>
-                      <p className="text-[12px] text-[#6B7280]">
-                        {formatDate(expense.date)}
-                      </p>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
                       <p className="text-[16px] font-bold text-[#111111] tabular-nums">
