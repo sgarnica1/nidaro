@@ -5,8 +5,6 @@ import { getCategoriesWithPercentages } from "@/lib/actions/budget-structure";
 import { getExpenseCategories } from "@/lib/actions/expense-categories";
 import { DashboardPageClient } from "./dashboard-page-client";
 
-
-
 function budgetLabel(b: { name: string | null; startDate: Date }): string {
   if (b.name) return b.name;
   const raw = new Intl.DateTimeFormat("es-MX", { month: "long", year: "numeric" }).format(new Date(b.startDate));
@@ -106,7 +104,6 @@ export default async function DashboardPage({
   const categoryPercentages: Record<string, number> = Object.fromEntries(
     categories.map((c) => [c.id, c.userPercentage])
   );
-
 
   const budgetOptions = allBudgets.map((b) => ({
     id: b.id,
