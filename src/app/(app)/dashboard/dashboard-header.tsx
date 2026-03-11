@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { ChevronLeft, ChevronRight, Pencil } from "lucide-react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -23,33 +24,39 @@ export function DashboardHeader({ monthLabel, dateRange, budgetId, onPrevious, o
       <div className="flex items-center justify-between mb-1">
         <h1 className="text-[28px] font-bold text-[#111111] tracking-tight">{monthLabel}</h1>
         <div className="flex items-center gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-11 w-11 text-[#6B7280] hover:text-[#111111] hover:bg-[#F3F4F6]"
-            onClick={() => router.push(`/presupuestos/${budgetId}`)}
-            title="Editar presupuesto"
-          >
-            <Pencil className="h-5 w-5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-11 w-11 text-[#6B7280] hover:text-[#111111] hover:bg-[#F3F4F6]"
-            onClick={onPrevious}
-            disabled={!canGoPrevious}
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-11 w-11 text-[#6B7280] hover:text-[#111111] hover:bg-[#F3F4F6]"
-            onClick={onNext}
-            disabled={!canGoNext}
-          >
-            <ChevronRight className="h-5 w-5" />
-          </Button>
+          <motion.div whileTap={{ scale: 0.9 }}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-11 w-11 text-[#6B7280] hover:text-[#111111] hover:bg-[#F3F4F6]"
+              onClick={() => router.push(`/presupuestos/${budgetId}`)}
+              title="Editar presupuesto"
+            >
+              <Pencil className="h-5 w-5" />
+            </Button>
+          </motion.div>
+          <motion.div whileTap={{ scale: 0.9 }}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-11 w-11 text-[#6B7280] hover:text-[#111111] hover:bg-[#F3F4F6]"
+              onClick={onPrevious}
+              disabled={!canGoPrevious}
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+          </motion.div>
+          <motion.div whileTap={{ scale: 0.9 }}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-11 w-11 text-[#6B7280] hover:text-[#111111] hover:bg-[#F3F4F6]"
+              onClick={onNext}
+              disabled={!canGoNext}
+            >
+              <ChevronRight className="h-5 w-5" />
+            </Button>
+          </motion.div>
         </div>
       </div>
       <p className="text-[12px] text-[#6B7280]">{dateRange}</p>

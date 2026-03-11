@@ -48,7 +48,7 @@ function toDate(date: Date | string): Date {
 }
 
 function formatDate(date: Date | string): string {
-  return new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short" }).format(toDate(date));
+  return new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short", timeZone: "UTC" }).format(toDate(date));
 }
 
 function darkenHex(hex: string, factor = 0.7): string {
@@ -77,12 +77,12 @@ function groupByMonth(expenses: ExpenseWithCategory[]): MonthGroup[] {
   const map = new Map<string, MonthGroup>();
   for (const exp of expenses) {
     const d = toDate(exp.date);
-    const year = d.getFullYear();
-    const month = d.getMonth();
+    const year = d.getUTCFullYear();
+    const month = d.getUTCMonth();
     const key = `${year}-${month}`;
     if (!map.has(key)) {
-      const dateForFormat = new Date(year, month, 1);
-      const raw = new Intl.DateTimeFormat("es-MX", { month: "long", year: "numeric" }).format(dateForFormat);
+      const dateForFormat = new Date(Date.UTC(year, month, 1));
+      const raw = new Intl.DateTimeFormat("es-MX", { month: "long", year: "numeric", timeZone: "UTC" }).format(dateForFormat);
       map.set(key, {
         key,
         label: raw.charAt(0).toUpperCase() + raw.slice(1),
@@ -161,7 +161,7 @@ export function ExpenseList({ expenses, expenseCategories, budgetId, onAddExpens
                     type="button"
                     onClick={() => handleRowPress(expense)}
                     className={cn(
-                      "w-full flex items-center gap-4 min-h-[64px] py-3 px-5 transition-colors",
+                      "w-full flex items-center gap-4 min-h-[64px] py-3 px-5 transition-colors cursor-pointer",
                       pressedRow === expense.id ? "bg-[#F3F4F6]" : "bg-white hover:bg-[#F3F4F6]"
                     )}
                   >
@@ -173,27 +173,27 @@ export function ExpenseList({ expenses, expenseCategories, budgetId, onAddExpens
                     >
                       {getCategoryIcon(category)}
                     </div>
-                    <div className="flex-1 min-w-0 text-left overflow-hidden">
-                      <p className="text-[15px] font-medium text-[#111111] mb-1 truncate">
+                    <div className="flex-1 min-w-0 text-left overflow-hidden pr-2">
+                      <p className="text-[15px] font-medium text-[#111111] mb-1.5 truncate">
                         {expense.name}
                       </p>
-                      <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <p className="text-[12px] text-muted-foreground shrink-0">
+                          {formatDate(expense.date)}
+                        </p>
                         <Badge
-                          className="text-[11px] px-2 py-0.5 rounded-full border-0 shrink-0"
+                          className="text-[11px] px-2 py-0.5 rounded-full border-0 max-w-[120px] truncate"
                           style={{
                             backgroundColor: `${category.color}1A`,
                             color: darkenHex(category.color),
                           }}
                         >
-                          {category.name}
+                          <span className="truncate block">{category.name}</span>
                         </Badge>
-                        <p className="text-[12px] text-[#6B7280]">
-                          {formatDate(expense.date)}
-                        </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3 shrink-0">
-                      <p className="text-[16px] font-bold text-[#111111] tabular-nums">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <p className="text-[16px] font-bold text-[#111111] tabular-nums whitespace-nowrap">
                         {formatCurrency(expense.amount)}
                       </p>
                       <ChevronRight className="h-5 w-5 text-[#6B7280] shrink-0" />

@@ -95,7 +95,7 @@ export function IncomeForm({ source, children, open: controlledOpen, onOpenChang
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col h-full">
           <div className="flex-1 overflow-y-auto">
-            <div className="pt-5 pb-4">
+            <div className="pt-5 pb-4 px-5">
               <FormField
                 control={form.control}
                 name="amount"

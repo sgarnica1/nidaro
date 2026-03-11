@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ExpenseList } from "./expense-list";
 import { ExpenseForm } from "./expense-form";
@@ -30,11 +31,11 @@ function formatCurrency(amount: number) {
 }
 
 function getMonthKey(date: Date): string {
-  return `${date.getFullYear()}-${date.getMonth()}`;
+  return `${date.getUTCFullYear()}-${date.getUTCMonth()}`;
 }
 
 function getMonthLabel(date: Date): string {
-  return new Intl.DateTimeFormat("es-MX", { month: "long" }).format(date);
+  return new Intl.DateTimeFormat("es-MX", { month: "long", timeZone: "UTC" }).format(date);
 }
 
 function formatDate(date: Date): string {
@@ -135,24 +136,28 @@ export function GastosClient({
               </h1>
               {budgetOptions.length > 1 && (
                 <div className="flex items-center gap-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-11 w-11 text-[#6B7280] hover:text-[#111111] hover:bg-[#F3F4F6]"
-                    onClick={handlePrevious}
-                    disabled={!canGoPrevious}
-                  >
-                    <ChevronLeft className="h-5 w-5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-11 w-11 text-[#6B7280] hover:text-[#111111] hover:bg-[#F3F4F6]"
-                    onClick={handleNext}
-                    disabled={!canGoNext}
-                  >
-                    <ChevronRight className="h-5 w-5" />
-                  </Button>
+                  <motion.div whileTap={{ scale: 0.9 }}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-11 w-11 text-[#6B7280] hover:text-[#111111] hover:bg-[#F3F4F6]"
+                      onClick={handlePrevious}
+                      disabled={!canGoPrevious}
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </Button>
+                  </motion.div>
+                  <motion.div whileTap={{ scale: 0.9 }}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-11 w-11 text-[#6B7280] hover:text-[#111111] hover:bg-[#F3F4F6]"
+                      onClick={handleNext}
+                      disabled={!canGoNext}
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </Button>
+                  </motion.div>
                 </div>
               )}
             </div>
@@ -162,10 +167,12 @@ export function GastosClient({
               open={isFormOpen}
               onOpenChange={setIsFormOpen}
             >
-              <Button className="hidden md:flex bg-[#1C3D2E] hover:bg-[#1C3D2E]/90 text-white h-10 px-4 rounded-xl">
-                <Plus className="h-4 w-4 mr-2" />
-                Nuevo gasto
-              </Button>
+              <motion.div whileTap={{ scale: 0.95 }} whileHover={{ scale: 1.02 }}>
+                <Button className="hidden md:flex bg-[#1C3D2E] hover:bg-[#1C3D2E]/90 text-white h-10 px-4 rounded-xl">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nuevo gasto
+                </Button>
+              </motion.div>
             </ExpenseForm>
           </div>
           <p className="text-[12px] text-[#6B7280]"><span className="font-bold">{monthLabel}</span> - {dateRange}</p>
@@ -184,9 +191,10 @@ export function GastosClient({
         {availableMonths.length > 1 && (
           <div className="mb-6 -mx-5 px-5">
             <div className="flex gap-2 overflow-x-auto scrollbar-none pb-2">
-              <button
+              <motion.button
                 type="button"
                 onClick={() => setSelectedMonth(null)}
+                whileTap={{ scale: 0.95 }}
                 className={cn(
                   "px-4 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-all",
                   selectedMonth === null
@@ -195,12 +203,13 @@ export function GastosClient({
                 )}
               >
                 Todos
-              </button>
+              </motion.button>
               {availableMonths.map((month) => (
-                <button
+                <motion.button
                   key={month.key}
                   type="button"
                   onClick={() => setSelectedMonth(month.key)}
+                  whileTap={{ scale: 0.95 }}
                   className={cn(
                     "px-4 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-all capitalize",
                     selectedMonth === month.key
@@ -209,7 +218,7 @@ export function GastosClient({
                   )}
                 >
                   {month.label}
-                </button>
+                </motion.button>
               ))}
             </div>
           </div>
@@ -229,15 +238,24 @@ export function GastosClient({
         open={isFormOpen}
         onOpenChange={setIsFormOpen}
       >
-        <Button
-          size="icon"
-          className={cn(
-            "fixed bottom-24 right-5 h-14 w-14 rounded-full md:hidden z-60 bg-[#1C3D2E] hover:bg-[#1C3D2E]/90 text-white shadow-[0_4px_16px_rgba(28,61,46,0.35)] transition-opacity active:opacity-75",
-            isFormOpen && "hidden"
-          )}
+        <motion.div
+          className={cn("fixed bottom-24 right-5 md:hidden z-60", isFormOpen && "hidden")}
+          whileTap={{ scale: 0.9 }}
+          initial={false}
         >
-          <Plus className="h-6 w-6" />
-        </Button>
+          <motion.div
+            className="absolute inset-0 rounded-full bg-[#1C3D2E] opacity-20"
+            initial={{ scale: 1, opacity: 0 }}
+            whileTap={{ scale: 4, opacity: [0, 0.2, 0] }}
+            transition={{ duration: 0.4, ease: "easeOut" }}
+          />
+          <Button
+            size="icon"
+            className="relative h-14 w-14 rounded-full bg-[#1C3D2E] hover:bg-[#1C3D2E]/90 text-white shadow-[0_4px_16px_rgba(28,61,46,0.35)]"
+          >
+            <Plus className="h-6 w-6" />
+          </Button>
+        </motion.div>
       </ExpenseForm>
     </div>
   );
