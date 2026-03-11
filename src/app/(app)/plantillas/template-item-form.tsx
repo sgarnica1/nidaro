@@ -5,7 +5,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { motion } from "framer-motion";
-import { Plus, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import {
   Form,
   FormControl,
@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ResponsiveSheet } from "@/components/ui/responsive-sheet";
 import { CategoryForm } from "@/app/(app)/categorias/category-form";
+import { CategoryPickerSheet } from "@/app/(app)/gastos/category-picker-sheet";
 import { cn } from "@/lib/utils";
 import { upsertTemplateItem } from "@/lib/actions/templates";
 import type {
@@ -44,6 +45,7 @@ type Props = {
   expenseCategories: ExpenseCategoryWithRelations[];
   budgetCategories: BudgetCategoryWithSubs[];
   filterBudgetCategoryId?: string;
+  filterSubcategoryName?: string;
   existingItemCategoryIds?: string[];
   children: React.ReactNode;
   onItemAdded?: () => void;
@@ -61,6 +63,7 @@ export function TemplateItemForm({
   expenseCategories: initialExpenseCategories,
   budgetCategories,
   filterBudgetCategoryId,
+  filterSubcategoryName,
   existingItemCategoryIds = [],
   children,
   onItemAdded,
@@ -79,14 +82,27 @@ export function TemplateItemForm({
     }
   };
   const [newCategoryOpen, setNewCategoryOpen] = useState(false);
+  const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
+  const [categoryError, setCategoryError] = useState(false);
   const [amountFocused, setAmountFocused] = useState(false);
   const amountInputRef = useRef<HTMLInputElement>(null);
 
-  // First filter by budget category, then exclude already added categories (unless editing)
+  // First filter by budget category, then by subcategory if specified, then exclude already added categories (unless editing)
   const filteredCategories = (filterBudgetCategoryId
     ? initialExpenseCategories.filter((c) => c.budgetCategory.id === filterBudgetCategoryId)
     : initialExpenseCategories
   ).filter((c) => {
+    // Filter by subcategory
+    if (filterSubcategoryName !== undefined) {
+      if (filterSubcategoryName === "") {
+        // Empty string means "no subcategory" - show only categories without subcategory
+        if (c.subcategory) return false;
+      } else {
+        // Non-empty string means match by subcategory name
+        if (c.subcategory?.name !== filterSubcategoryName) return false;
+      }
+    }
+    // If filterSubcategoryName is undefined, don't filter by subcategory (show all)
     // If editing, include the current category; otherwise exclude existing ones
     if (editingItem && c.id === editingItem.expenseCategoryId) return true;
     return !existingItemCategoryIds.includes(c.id);
@@ -103,6 +119,10 @@ export function TemplateItemForm({
   const amount = useWatch({ control: form.control, name: "plannedAmount" });
   const selectedCategoryId = useWatch({ control: form.control, name: "expenseCategoryId" });
   const [amountInputValue, setAmountInputValue] = useState<string>("");
+
+  const sortedCategories = useMemo(() => {
+    return [...filteredCategories].sort((a, b) => a.name.localeCompare(b.name));
+  }, [filteredCategories]);
 
   function formatNumberWithCommas(value: string): string {
     const numericValue = value.replace(/,/g, "");
@@ -164,6 +184,11 @@ export function TemplateItemForm({
   // The CategoryForm will handle creation and we'll get updated list via parent refresh
 
   async function onSubmit(values: FormValues) {
+    if (!values.expenseCategoryId) {
+      setCategoryError(true);
+      return;
+    }
+    setCategoryError(false);
     const result = await upsertTemplateItem(templateId, values);
     if (result.success) {
       onItemAdded?.();
@@ -259,7 +284,7 @@ export function TemplateItemForm({
                                   amountFocused ? "text-[#1C3D2E]" : "text-[#111111]",
                                   "transition-colors w-full max-w-full"
                                 )}
-                                style={{ 
+                                style={{
                                   minWidth: "fit-content"
                                 }}
                               />
@@ -327,60 +352,36 @@ export function TemplateItemForm({
 
               <div className="h-px bg-[#F3F4F6]" />
 
-              {/* Category Pills */}
-              <div className="px-4 py-5">
-                <p className="text-[12px] text-[#6B7280] font-medium mb-4">Selecciona una categoría</p>
-                <div
-                  className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4"
-                  style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-                  onTouchStart={() => {
-                    // Dismiss keyboard when scrolling categories
-                    amountInputRef.current?.blur();
-                  }}
-                >
-                  {filteredCategories.map((cat) => {
-                    const isSelected = selectedCategoryId === cat.id;
-                    return (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => {
-                          form.setValue("expenseCategoryId", cat.id);
-                        }}
-                        className={cn(
-                          "h-9 px-[14px] rounded-[99px] flex items-center shrink-0 transition-all font-medium",
-                          isSelected
-                            ? "border border-current"
-                            : "bg-[#F3F4F6] text-[#6B7280] border border-transparent"
-                        )}
-                        style={
-                          isSelected
-                            ? {
-                              backgroundColor: `${cat.color}15`,
-                              color: cat.color,
-                              borderColor: cat.color,
-                            }
-                            : {}
-                        }
-                      >
-                        <span className="text-sm">{cat.name}</span>
-                      </button>
-                    );
-                  })}
-                  <button
-                    type="button"
-                    onClick={() => setNewCategoryOpen(true)}
-                    className="h-9 px-[14px] rounded-[99px] flex items-center shrink-0 border border-dashed border-[#D1D5DB] text-[#6B7280] bg-transparent hover:bg-[#F3F4F6] transition-colors"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    <span className="text-sm">Nueva</span>
-                  </button>
-                </div>
+              {/* Category Selection */}
+              <div className="px-4 py-5 space-y-2">
+                <label className="text-sm font-medium text-foreground block">Categoría</label>
                 <FormField
                   control={form.control}
                   name="expenseCategoryId"
                   render={() => (
                     <FormItem>
+                      <FormControl>
+                        <motion.button
+                          type="button"
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setCategoryPickerOpen(true)}
+                          className={cn(
+                            "w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-colors text-left",
+                            selectedCategoryId
+                              ? "bg-primary/10 border-primary/20 text-primary"
+                              : categoryError
+                                ? "bg-destructive/10 border-destructive/20 text-destructive"
+                                : "bg-muted/60 border-border text-muted-foreground hover:bg-muted/80"
+                          )}
+                        >
+                          <span className="text-base font-medium">
+                            {selectedCategoryId
+                              ? sortedCategories.find((c) => c.id === selectedCategoryId)?.name || "Categoría seleccionada"
+                              : "Agregar categoría"}
+                          </span>
+                          <span className="text-sm">+</span>
+                        </motion.button>
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -413,6 +414,18 @@ export function TemplateItemForm({
           </form>
         </Form>
       </ResponsiveSheet>
+
+      {/* Category Picker Sheet */}
+      <CategoryPickerSheet
+        open={categoryPickerOpen}
+        onOpenChange={setCategoryPickerOpen}
+        categories={sortedCategories}
+        selectedCategoryId={selectedCategoryId}
+        onSelect={(id) => {
+          form.setValue("expenseCategoryId", id);
+          setCategoryError(false);
+        }}
+      />
 
       {/* New Category Sheet */}
       <CategoryForm

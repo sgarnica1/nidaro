@@ -126,31 +126,6 @@ export function BudgetCard({
     });
   }
 
-  useEffect(() => {
-    if (expandedSections.size === 0) {
-      const necesidadesCategory = budgetCategories.find((bc) => bc.name === "Necesidades");
-      if (necesidadesCategory) {
-        const plans = budget.expensePlans.filter((p) => p.expenseCategory.budgetCategory.id === necesidadesCategory.id);
-        const gastosFijosPlans = plans.filter((p) => p.expenseCategory.subcategory?.name === "Gastos Fijos");
-        if (gastosFijosPlans.length > 0) {
-          setTimeout(() => {
-            setExpandedSections(new Set([`${necesidadesCategory.id}-gastos-fijos`]));
-          }, 0);
-          return;
-        }
-      }
-      const firstWithData = budgetCategories.find((bc) => {
-        const plans = budget.expensePlans.filter((p) => p.expenseCategory.budgetCategory.id === bc.id);
-        return plans.length > 0;
-      });
-      if (firstWithData) {
-        setTimeout(() => {
-          setExpandedSections(new Set([firstWithData.id]));
-        }, 0);
-      }
-    }
-  }, [expandedSections.size, budgetCategories, budget.expensePlans]);
-
   const existingPlanCategoryIds = budget.expensePlans.map((p) => p.expenseCategory.id);
 
   return (
@@ -242,23 +217,23 @@ export function BudgetCard({
               total: number;
               order: number;
             }> = [
-              {
-                id: "gastos-fijos",
-                name: "Gastos Fijos",
-                dbName: "Gastos Fijos",
-                plans: gastosFijosPlans,
-                total: gastosFijosTotal,
-                order: 1,
-              },
-              {
-                id: "gastos-variables",
-                name: "Variables Necesarios",
-                dbName: "Gastos Variables Necesarios",
-                plans: gastosVariablesPlans,
-                total: gastosVariablesTotal,
-                order: 2,
-              },
-            ];
+                {
+                  id: "gastos-fijos",
+                  name: "Gastos Fijos",
+                  dbName: "Gastos Fijos",
+                  plans: gastosFijosPlans,
+                  total: gastosFijosTotal,
+                  order: 1,
+                },
+                {
+                  id: "gastos-variables",
+                  name: "Variables Necesarios",
+                  dbName: "Gastos Variables Necesarios",
+                  plans: gastosVariablesPlans,
+                  total: gastosVariablesTotal,
+                  order: 2,
+                },
+              ];
 
             if (plansWithoutSubcategory.length > 0) {
               subcategories.push({
@@ -287,7 +262,7 @@ export function BudgetCard({
                       <div className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.04)] overflow-hidden">
                         <button
                           type="button"
-                          className="w-full flex items-center justify-between p-5 hover:bg-[#FAFAFA] transition-colors"
+                          className="w-full flex items-center justify-between p-5 hover:bg-[#FAFAFA] transition-colors cursor-pointer"
                           onClick={() => toggleSection(`${bc.id}-${subcat.id}`)}
                         >
                           <div className="flex items-center gap-4 flex-1">
@@ -515,7 +490,7 @@ export function BudgetCard({
               <div className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.04)] overflow-hidden">
                 <button
                   type="button"
-                  className="w-full flex items-center justify-between p-5 hover:bg-[#FAFAFA] transition-colors"
+                  className="w-full flex items-center justify-between p-5 hover:bg-[#FAFAFA] transition-colors cursor-pointer"
                   onClick={() => toggleSection(bc.id)}
                 >
                   <div className="flex items-center gap-4 flex-1">

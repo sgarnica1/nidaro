@@ -205,31 +205,6 @@ export function TemplateCard({
     router.push(`/presupuestos/nuevo?templateId=${template.id}`);
   }
 
-  useEffect(() => {
-    if (expandedSections.size === 0) {
-      const necesidadesCategory = budgetCategories.find((bc) => bc.name === "Necesidades");
-      if (necesidadesCategory) {
-        const items = template.items.filter((i) => i.expenseCategory.budgetCategory.id === necesidadesCategory.id);
-        const gastosFijosItems = items.filter((i) => i.expenseCategory.subcategory?.name === "Gastos Fijos");
-        if (gastosFijosItems.length > 0) {
-          setTimeout(() => {
-            setExpandedSections(new Set([`${necesidadesCategory.id}-gastos-fijos`]));
-          }, 0);
-          return;
-        }
-      }
-      const firstWithData = budgetCategories.find((bc) => {
-        const items = template.items.filter((i) => i.expenseCategory.budgetCategory.id === bc.id);
-        return items.length > 0;
-      });
-      if (firstWithData) {
-        setTimeout(() => {
-          setExpandedSections(new Set([firstWithData.id]));
-        }, 0);
-      }
-    }
-  }, [expandedSections.size, budgetCategories, template.items]);
-
   const existingCategoryIds = template.items.map((i) => i.expenseCategory.id);
 
   return (
@@ -324,32 +299,40 @@ export function TemplateCard({
             const gastosVariablesTotal = gastosVariablesItems.reduce((sum, i) => sum + Number(i.plannedAmount), 0);
             const itemsWithoutSubcategoryTotal = itemsWithoutSubcategory.reduce((sum, i) => sum + Number(i.plannedAmount), 0);
 
-            const subcategories = [
-              {
-                id: "gastos-fijos",
-                name: "Gastos Fijos",
-                items: gastosFijosItems,
-                total: gastosFijosTotal,
-                order: 1,
-              },
-              {
-                id: "gastos-variables",
-                name: "Gastos Variables Necesarios",
-                items: gastosVariablesItems,
-                total: gastosVariablesTotal,
-                order: 2,
-              },
-            ].filter((sub) => sub.items.length > 0 || sub.total > 0);
+            const subcategories: Array<{
+              id: string;
+              name: string;
+              dbName: string; // Empty string for "Sin subcategoría", actual name for others
+              items: typeof gastosFijosItems;
+              total: number;
+              order: number;
+            }> = [
+                {
+                  id: "gastos-fijos",
+                  name: "Gastos Fijos",
+                  dbName: "Gastos Fijos",
+                  items: gastosFijosItems,
+                  total: gastosFijosTotal,
+                  order: 1,
+                },
+                {
+                  id: "gastos-variables",
+                  name: "Variables Necesarios",
+                  dbName: "Gastos Variables Necesarios",
+                  items: gastosVariablesItems,
+                  total: gastosVariablesTotal,
+                  order: 2,
+                },
+              ];
 
-            if (itemsWithoutSubcategory.length > 0) {
-              subcategories.push({
-                id: "sin-subcategoria",
-                name: "Sin subcategoría",
-                items: itemsWithoutSubcategory,
-                total: itemsWithoutSubcategoryTotal,
-                order: 3,
-              });
-            }
+            subcategories.push({
+              id: "sin-subcategoria",
+              name: "Sin subcategoría",
+              dbName: "", // Use empty string to represent "no subcategory"
+              items: itemsWithoutSubcategory,
+              total: itemsWithoutSubcategoryTotal,
+              order: 3,
+            });
 
             return (
               <div key={bc.id} className="space-y-4">
@@ -367,7 +350,7 @@ export function TemplateCard({
                       <div className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.04)] overflow-hidden">
                         <button
                           type="button"
-                          className="w-full flex items-center justify-between p-5 hover:bg-[#FAFAFA] transition-colors"
+                          className="w-full flex items-center justify-between p-5 hover:bg-[#FAFAFA] transition-colors cursor-pointer"
                           onClick={() => toggleSection(`${bc.id}-${subcat.id}`)}
                         >
                           <div className="flex items-center gap-4 flex-1">
@@ -418,6 +401,7 @@ export function TemplateCard({
                                       expenseCategories={expenseCategories}
                                       budgetCategories={budgetCategories}
                                       filterBudgetCategoryId={bc.id}
+                                      filterSubcategoryName={subcat.dbName}
                                       existingItemCategoryIds={existingCategoryIds}
                                       currentCategoryTotal={subcat.total}
                                       onItemAdded={() => router.refresh()}
@@ -556,6 +540,7 @@ export function TemplateCard({
                                         expenseCategories={expenseCategories}
                                         budgetCategories={budgetCategories}
                                         filterBudgetCategoryId={bc.id}
+                                        filterSubcategoryName={subcat.dbName}
                                         existingItemCategoryIds={existingCategoryIds}
                                         currentCategoryTotal={subcat.total}
                                         onItemAdded={() => router.refresh()}
@@ -596,7 +581,7 @@ export function TemplateCard({
               <div className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.04)] overflow-hidden">
                 <button
                   type="button"
-                  className="w-full flex items-center justify-between p-5 hover:bg-[#FAFAFA] transition-colors"
+                  className="w-full flex items-center justify-between p-5 hover:bg-[#FAFAFA] transition-colors cursor-pointer"
                   onClick={() => toggleSection(bc.id)}
                 >
                   <div className="flex items-center gap-4 flex-1">
@@ -1039,12 +1024,6 @@ export function TemplateCard({
               </p>
             </div>
           </div>
-          <Button
-            className="w-full h-12 bg-[#1C3D2E] hover:bg-[#1C3D2E]/90 text-white rounded-xl font-medium"
-            onClick={handleUseTemplate}
-          >
-            Crear presupuesto
-          </Button>
         </div>
       </motion.div>
     </motion.div>

@@ -109,7 +109,7 @@ function TabContent({
                   type="button"
                   onClick={() => handleRowPress(cat.id)}
                   className={cn(
-                    "w-full flex items-center justify-between h-14 px-5 transition-colors",
+                    "w-full flex items-center justify-between h-14 px-5 transition-colors cursor-pointer",
                     pressedRow === cat.id ? "bg-[#F3F4F6]" : "bg-white hover:bg-[#F3F4F6]"
                   )}
                 >

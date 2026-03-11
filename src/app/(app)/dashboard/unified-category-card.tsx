@@ -189,8 +189,8 @@ export function UnifiedCategoryCard({ expensePlans, expenses, totalIncome, categ
                   }
                 }}
                 className={cn(
-                  "w-full flex items-center gap-4 h-[52px] px-0",
-                  (onRowClick || hasExpenseCategories) && "hover:opacity-80 transition-opacity cursor-pointer"
+                  "w-full flex items-center gap-4 h-[52px] px-0 cursor-pointer",
+                  (onRowClick || hasExpenseCategories) && "hover:opacity-80 transition-opacity"
                 )}
               >
                 {/* Left: Colored square + name + badge */}
