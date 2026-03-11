@@ -42,8 +42,15 @@ function formatCurrency(amount: number) {
   }).format(amount);
 }
 
-function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short" }).format(new Date(date));
+function formatDate(date: Date | string): string {
+  let dateObj: Date;
+  if (typeof date === "string") {
+    const [year, month, day] = date.split("-").map(Number);
+    dateObj = new Date(year, month - 1, day);
+  } else {
+    dateObj = date;
+  }
+  return new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short" }).format(dateObj);
 }
 
 function darkenHex(hex: string, factor = 0.7): string {
@@ -71,10 +78,13 @@ function getCategoryIcon(category: ExpenseCategoryWithRelations) {
 function groupByMonth(expenses: ExpenseWithCategory[]): MonthGroup[] {
   const map = new Map<string, MonthGroup>();
   for (const exp of expenses) {
-    const d = new Date(exp.date);
-    const key = `${d.getFullYear()}-${d.getMonth()}`;
+    const d = exp.date instanceof Date ? exp.date : new Date(exp.date);
+    const year = d.getFullYear();
+    const month = d.getMonth();
+    const key = `${year}-${month}`;
     if (!map.has(key)) {
-      const raw = new Intl.DateTimeFormat("es-MX", { month: "long", year: "numeric" }).format(d);
+      const dateForFormat = new Date(year, month, 1);
+      const raw = new Intl.DateTimeFormat("es-MX", { month: "long", year: "numeric" }).format(dateForFormat);
       map.set(key, {
         key,
         label: raw.charAt(0).toUpperCase() + raw.slice(1),
@@ -126,7 +136,7 @@ export function ExpenseList({ expenses, expenseCategories, budgetId, onAddExpens
 
   return (
     <>
-      <div className="space-y-8">
+      <div className="space-y-6 pb-6">
         {groups.map((group, groupIndex) => (
           <div key={group.key}>
             {showMonthHeaders && (
@@ -153,7 +163,7 @@ export function ExpenseList({ expenses, expenseCategories, budgetId, onAddExpens
                     type="button"
                     onClick={() => handleRowPress(expense)}
                     className={cn(
-                      "w-full flex items-center gap-4 h-16 px-5 transition-colors",
+                      "w-full flex items-center gap-4 min-h-[64px] py-3 px-5 transition-colors",
                       pressedRow === expense.id ? "bg-[#F3F4F6]" : "bg-white hover:bg-[#F3F4F6]"
                     )}
                   >
@@ -165,8 +175,8 @@ export function ExpenseList({ expenses, expenseCategories, budgetId, onAddExpens
                     >
                       {getCategoryIcon(category)}
                     </div>
-                    <div className="flex-1 min-w-0 text-left">
-                      <p className="text-[15px] font-medium text-[#111111] mb-1 line-clamp-2 break-words">
+                    <div className="flex-1 min-w-0 text-left overflow-hidden">
+                      <p className="text-[15px] font-medium text-[#111111] mb-1 truncate">
                         {expense.name}
                       </p>
                       <div className="flex items-center gap-2 flex-wrap">

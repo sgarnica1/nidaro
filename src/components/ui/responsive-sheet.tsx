@@ -64,7 +64,7 @@ export function ResponsiveSheet({ open, onOpenChange, title, trigger, children, 
           <>
             {showDragHandle && (
               <div className="flex justify-center pt-3 pb-4 shrink-0">
-                <div className="w-10 h-1.5 rounded-full bg-muted" />
+                <div className="w-10 h-1.5 rounded-full bg-gray-700" />
               </div>
             )}
             <SheetHeader className="px-6 pt-0 pb-0 shrink-0 border-none">

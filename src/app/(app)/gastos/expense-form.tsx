@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -34,8 +35,11 @@ import { useIsMobile } from "@/hooks/use-is-mobile";
 const schema = z.object({
   budgetId: z.string().min(1),
   expenseCategoryId: z.string().min(1, "Selecciona una categoría"),
-  name: z.string().min(1, "La descripción es requerida"),
-  amount: z.coerce.number().positive("El monto debe ser positivo"),
+  name: z.string().min(1, "La descripción es requerida").max(100, "La descripción no puede exceder 100 caracteres"),
+  amount: z.coerce
+    .number()
+    .positive("El monto debe ser positivo")
+    .max(9999999999.99),
   date: z.string().min(1, "La fecha es requerida"),
 });
 
@@ -52,10 +56,39 @@ type Props = {
 };
 
 function todayString() {
-  return new Date().toISOString().split("T")[0];
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatDateForInput(date: Date | string): string {
+  if (typeof date === "string") {
+    return date;
+  }
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function parseDateString(dateString: string): Date {
+  const [year, month, day] = dateString.split("-").map(Number);
+  return new Date(year, month - 1, day);
+}
+
+function formatNumberWithCommas(value: string | number): string {
+  if (!value && value !== 0) return "";
+  const numValue = typeof value === "string" ? parseFloat(value.replace(/,/g, "")) : value;
+  if (isNaN(numValue)) return "";
+  const parts = numValue.toString().split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return parts.join(".");
 }
 
 export function ExpenseForm({ budgetId, expenseCategories, expense, children, onClose, open: controlledOpen, onOpenChange }: Props) {
+  const router = useRouter();
   const isMobile = useIsMobile();
   const [internalOpen, setInternalOpen] = useState(false);
   const open = controlledOpen ?? internalOpen;
@@ -72,7 +105,6 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
   const amountInputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
   const [showSuccess, setShowSuccess] = useState(false);
-  const [suggestedCategory, setSuggestedCategory] = useState<string | null>(null);
 
   const form = useForm<FormValues, unknown, FormValues>({
     resolver: zodResolver(schema) as never,
@@ -81,7 +113,7 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
       expenseCategoryId: expense?.expenseCategoryId ?? "",
       name: expense?.name ?? "",
       amount: expense ? Number(expense.amount) : 0,
-      date: expense ? new Date(expense.date).toISOString().split("T")[0] : todayString(),
+      date: expense ? formatDateForInput(expense.date) : todayString(),
     },
   });
 
@@ -100,50 +132,23 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
 
   const amount = form.watch("amount");
   const selectedCategoryId = form.watch("expenseCategoryId");
-  const nameValue = form.watch("name");
   const sortedCategories = [...expenseCategories].sort((a, b) => a.name.localeCompare(b.name));
 
-  // Smart category suggestions based on description
-  useEffect(() => {
-    if (!nameValue || nameValue.length < 2) {
-      setSuggestedCategory(null);
-      return;
-    }
 
-    const lowerName = nameValue.toLowerCase();
-    const suggestions: Record<string, string[]> = {
-      "Transporte": ["uber", "taxi", "metro", "bus", "transporte", "gasolina", "gas"],
-      "Supermercado": ["costco", "walmart", "soriana", "chedraui", "super", "supermercado", "tienda"],
-      "Salidas": ["restaurant", "restaurante", "cafe", "starbucks", "comida", "comer", "tacos", "sushi"],
-      "Salud": ["farmacia", "doctor", "medico", "hospital", "clinica", "salud"],
-      "Hogar": ["home", "depot", "liverpool", "palacio", "hogar", "casa"],
-    };
-
-    for (const [categoryName, keywords] of Object.entries(suggestions)) {
-      if (keywords.some((keyword) => lowerName.includes(keyword))) {
-        const category = sortedCategories.find((c) => c.name === categoryName);
-        if (category && category.id !== selectedCategoryId) {
-          setSuggestedCategory(category.id);
-          return;
-        }
-      }
-    }
-    setSuggestedCategory(null);
-  }, [nameValue, sortedCategories, selectedCategoryId]);
-
-  // Limit to 3-4 visible categories, ensure selected is included
-  let topCategories = sortedCategories.slice(0, 3);
-  if (selectedCategoryId && !topCategories.find((c) => c.id === selectedCategoryId)) {
-    const selectedCat = sortedCategories.find((c) => c.id === selectedCategoryId);
-    if (selectedCat) {
-      topCategories = [selectedCat, ...sortedCategories.filter((c) => c.id !== selectedCategoryId)].slice(0, 3);
-    }
-  }
 
   useEffect(() => {
     if (open) {
       if (expense) {
-        setAmountInputValue(Number(expense.amount) > 0 ? Number(expense.amount).toString() : "");
+        const expenseAmount = Number(expense.amount);
+        if (expenseAmount > 0) {
+          const hasDecimals = expenseAmount % 1 !== 0;
+          const formattedValue = hasDecimals
+            ? formatNumberWithCommas(expenseAmount.toFixed(2))
+            : formatNumberWithCommas(expenseAmount.toString());
+          setAmountInputValue(formattedValue);
+        } else {
+          setAmountInputValue("");
+        }
       } else {
         setAmountInputValue("");
       }
@@ -156,6 +161,8 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
   }, [open, expense]);
 
   async function onSubmit(values: FormValues) {
+    console.log("onSubmit called with values:", values);
+
     if (values.amount === 0 || values.amount <= 0) {
       setAmountError(true);
       amountInputRef.current?.focus();
@@ -169,31 +176,46 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
       return;
     }
 
-    const result = expense
-      ? await updateExpense(expense.id, values)
-      : await createExpense(values);
+    try {
+      console.log("Calling server action...");
+      const result = expense
+        ? await updateExpense(expense.id, values)
+        : await createExpense(values);
 
-    if (result.success) {
-      setShowSuccess(true);
-      setTimeout(() => {
-        setShowSuccess(false);
-        setOpen(false);
-        if (!expense) {
-          form.reset({
-            budgetId,
-            expenseCategoryId: "",
-            name: "",
-            amount: 0,
-            date: todayString(),
-          });
-          setAmountInputValue("");
-        }
-        onClose?.();
-      }, 500);
+      console.log("Expense save result:", result);
+
+      if (result.success) {
+        setShowSuccess(true);
+        setTimeout(() => {
+          setShowSuccess(false);
+          setOpen(false);
+          if (!expense) {
+            form.reset({
+              budgetId,
+              expenseCategoryId: "",
+              name: "",
+              amount: 0,
+              date: todayString(),
+            });
+            setAmountInputValue("");
+          }
+          router.refresh();
+          onClose?.();
+        }, 500);
+      } else {
+        console.error("Error saving expense:", result.error);
+        const errorMessage = result.error?.includes("numeric field overflow")
+          ? "El monto es demasiado grande. El máximo permitido es $9,999,999,999.99"
+          : result.error || "No se pudo guardar el gasto";
+        alert(`Error: ${errorMessage}`);
+      }
+    } catch (error) {
+      console.error("Error in onSubmit:", error);
+      alert(`Error inesperado: ${error instanceof Error ? error.message : "Error desconocido"}`);
     }
   }
 
-  const dateValue = form.watch("date") ? new Date(form.watch("date") + "T00:00:00") : undefined;
+  const dateValue = form.watch("date") ? parseDateString(form.watch("date")) : undefined;
   const formattedDate = dateValue ? format(dateValue, "d MMM", { locale: es }) : "Selecciona fecha";
 
   return (
@@ -235,7 +257,7 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
                   transition={{ duration: 0.25 }}
                   className="flex-1 overflow-y-auto"
                 >
-                  <div className="px-6 pt-6 pb-8 space-y-5">
+                  <div className="px-6 pt-0 pb-8 lg:p-0 space-y-5">
                     {/* Title Hierarchy */}
                     <div className="space-y-1">
                       <h2 className="text-xl font-semibold tracking-tight text-foreground">
@@ -264,7 +286,8 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
                                   }
                                   nameInputRef.current = e;
                                 }}
-                                placeholder="Ej: Café en Starbucks"
+                                placeholder="Ej: Restaurante, pago de servicios, etc."
+                                maxLength={100}
                                 className="text-lg font-medium border-0 rounded-none focus-visible:ring-0 px-0 h-auto py-2"
                                 {...restField}
                               />
@@ -283,52 +306,92 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
                         <FormItem>
                           <FormControl>
                             <div className="space-y-3">
-                              <motion.div
-                                animate={{
-                                  scale: amountFocused ? 1.03 : 1,
-                                }}
-                                transition={{ duration: 0.15 }}
-                                className="relative"
-                              >
-                                <div className="flex items-center justify-center gap-3">
-                                  <span className="text-lg text-muted-foreground">$</span>
-                                  <input
-                                    ref={amountInputRef}
-                                    type="text"
-                                    inputMode="decimal"
-                                    placeholder="0"
-                                    value={amountInputValue}
-                                    onFocus={() => {
-                                      setAmountFocused(true);
-                                      if (amount > 0 && amountInputValue === "") {
-                                        setAmountInputValue(amount.toString());
-                                      }
-                                    }}
-                                    onBlur={() => {
-                                      setAmountFocused(false);
-                                      const numValue = parseFloat(amountInputValue) || 0;
-                                      field.onChange(numValue);
-                                      setAmountInputValue(numValue > 0 ? numValue.toString() : "");
-                                      setAmountError(false);
-                                    }}
-                                    onChange={(e) => {
-                                      const rawValue = e.target.value;
-                                      if (rawValue === "" || /^\d*\.?\d*$/.test(rawValue)) {
-                                        setAmountInputValue(rawValue);
-                                        const numValue = parseFloat(rawValue) || 0;
-                                        field.onChange(numValue);
+                              <div className="relative">
+                                <div className="flex items-center justify-center gap-2 w-full overflow-hidden">
+                                  <span className="text-lg text-muted-foreground shrink-0">$</span>
+                                  <div className="flex-1 min-w-0 flex justify-center overflow-x-auto" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+                                    <input
+                                      ref={amountInputRef}
+                                      type="text"
+                                      inputMode="decimal"
+                                      placeholder="0"
+                                      value={amountFocused ? amountInputValue : formatNumberWithCommas(amountInputValue)}
+                                      onFocus={() => {
+                                        setAmountFocused(true);
+                                        const currentValue = amountInputValue.replace(/,/g, "");
+                                        if (currentValue === "" && amount > 0) {
+                                          setAmountInputValue(amount.toString());
+                                        } else if (currentValue) {
+                                          const numValue = parseFloat(currentValue);
+                                          if (!isNaN(numValue)) {
+                                            setAmountInputValue(numValue.toString());
+                                          }
+                                        }
+                                      }}
+                                      onBlur={() => {
+                                        setAmountFocused(false);
+                                        const rawValue = amountInputValue.replace(/,/g, "");
+                                        if (rawValue === "") {
+                                          field.onChange(0);
+                                          setAmountInputValue("");
+                                          setAmountError(false);
+                                          return;
+                                        }
+                                        const numValue = parseFloat(rawValue);
+                                        if (isNaN(numValue)) {
+                                          setAmountInputValue("");
+                                          field.onChange(0);
+                                          setAmountError(false);
+                                          return;
+                                        }
+                                        const maxAmount = 9999999999.99;
+                                        const clampedValue = Math.min(numValue, maxAmount);
+                                        const roundedValue = Math.round(clampedValue * 100) / 100;
+                                        field.onChange(roundedValue);
+
+                                        if (roundedValue > 0) {
+                                          const hasDecimals = roundedValue % 1 !== 0;
+                                          const formattedValue = hasDecimals
+                                            ? formatNumberWithCommas(roundedValue.toFixed(2))
+                                            : formatNumberWithCommas(roundedValue.toString());
+                                          setAmountInputValue(formattedValue);
+                                        } else {
+                                          setAmountInputValue("");
+                                        }
                                         setAmountError(false);
-                                      }
-                                    }}
-                                    className={cn(
-                                      "text-5xl font-semibold tabular-nums bg-transparent border-none outline-none focus:outline-none text-center w-40",
-                                      "placeholder:text-muted-foreground",
-                                      amountError ? "text-destructive animate-[shake_0.5s]" : "text-foreground"
-                                    )}
-                                  />
-                                  <span className="text-lg text-muted-foreground">MXN</span>
+                                      }}
+                                      onChange={(e) => {
+                                        const rawValue = e.target.value.replace(/,/g, "");
+                                        console.log("onChange - e.target.value:", e.target.value, "rawValue:", rawValue);
+                                        if (rawValue === "" || /^\d*\.?\d{0,2}$/.test(rawValue)) {
+                                          const numValue = parseFloat(rawValue) || 0;
+                                          console.log("onChange - numValue:", numValue);
+                                          const maxAmount = 9999999999.99;
+
+                                          if (numValue <= maxAmount) {
+                                            console.log("onChange - setting amountInputValue to:", rawValue);
+                                            setAmountInputValue(rawValue);
+                                            field.onChange(numValue);
+                                            setAmountError(false);
+                                          } else {
+                                            console.log("onChange - value exceeds maxAmount");
+                                          }
+                                        } else {
+                                          console.log("onChange - invalid format");
+                                        }
+                                      }}
+                                      className={cn(
+                                        "text-5xl font-semibold tabular-nums bg-transparent border-none outline-none focus:outline-none text-center",
+                                        "placeholder:text-muted-foreground",
+                                        amountError ? "text-destructive animate-[shake_0.5s]" : "text-foreground",
+                                        "w-full max-w-full min-w-fit"
+                                      )}
+                                      style={{ minWidth: "fit-content" }}
+                                    />
+                                  </div>
+                                  <span className="text-lg text-muted-foreground shrink-0">MXN</span>
                                 </div>
-                              </motion.div>
+                              </div>
                               {amountError && (
                                 <p className="text-xs text-destructive text-center">Ingresa un monto</p>
                               )}
@@ -366,6 +429,7 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
                         if (isMobile) {
                           return (
                             <FormItem>
+                              <label className="text-sm font-medium text-foreground mb-2 block">Fecha</label>
                               <FormControl>
                                 <div className="flex items-center gap-2">
                                   <CalendarIcon className="h-4 w-4 text-muted-foreground" />
@@ -383,6 +447,7 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
                         }
                         return (
                           <FormItem>
+                            <label className="text-sm font-medium text-foreground mb-2 block">Fecha</label>
                             <FormControl>
                               <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                                 <PopoverTrigger asChild>
@@ -434,47 +499,39 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
                     />
 
                     {/* Category Selection */}
-                    <div
-                      className={cn(
-                        "flex gap-2 overflow-x-auto pb-1 -mx-6 px-6",
-                        categoryError && "bg-muted/40 rounded-lg p-2 transition-colors"
-                      )}
-                      style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-                    >
-                      {topCategories.map((cat) => {
-                        const isSelected = selectedCategoryId === cat.id;
-                        const isSuggested = suggestedCategory === cat.id;
-                        return (
-                          <motion.button
-                            key={cat.id}
-                            type="button"
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => {
-                              form.setValue("expenseCategoryId", cat.id);
-                              setCategoryError(false);
-                              setSuggestedCategory(null);
-                            }}
-                            className={cn(
-                              "rounded-full px-3 py-1 text-sm font-medium shrink-0 transition-colors",
-                              isSelected
-                                ? "bg-primary/10 text-primary"
-                                : isSuggested
-                                  ? "bg-primary/5 text-primary border border-primary/20"
-                                  : "bg-muted/60 text-muted-foreground hover:bg-muted/80"
-                            )}
-                          >
-                            {cat.name}
-                          </motion.button>
-                        );
-                      })}
-                      <motion.button
-                        type="button"
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => setCategoryPickerOpen(true)}
-                        className="rounded-full px-3 py-1 text-sm font-medium bg-muted/60 text-muted-foreground hover:bg-muted/80 shrink-0 transition-colors"
-                      >
-                        + Más
-                      </motion.button>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground block">Categoría</label>
+                      <FormField
+                        control={form.control}
+                        name="expenseCategoryId"
+                        render={() => (
+                          <FormItem>
+                            <FormControl>
+                              <motion.button
+                                type="button"
+                                whileTap={{ scale: 0.98 }}
+                                onClick={() => setCategoryPickerOpen(true)}
+                                className={cn(
+                                  "w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-colors text-left",
+                                  selectedCategoryId
+                                    ? "bg-primary/10 border-primary/20 text-primary"
+                                    : categoryError
+                                      ? "bg-destructive/10 border-destructive/20 text-destructive"
+                                      : "bg-muted/60 border-border text-muted-foreground hover:bg-muted/80"
+                                )}
+                              >
+                                <span className="text-base font-medium">
+                                  {selectedCategoryId
+                                    ? sortedCategories.find((c) => c.id === selectedCategoryId)?.name || "Categoría seleccionada"
+                                    : "Agregar categoría"}
+                                </span>
+                                <span className="text-sm">+</span>
+                              </motion.button>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
                   </div>
                 </motion.div>

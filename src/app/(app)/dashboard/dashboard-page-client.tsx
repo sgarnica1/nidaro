@@ -8,6 +8,7 @@ import { BudgetHealthSummary } from "./budget-health-summary";
 import { UnifiedCategoryCard } from "./unified-category-card";
 import { RecentExpensesPreview } from "./recent-expenses-preview";
 import { MonthlyExpensesSheet } from "@/app/(app)/gastos/monthly-expenses-sheet";
+import { ExpenseCategoryDetailSheet } from "./expense-category-detail-sheet";
 import { NewBudgetFAB } from "./new-budget-fab";
 import type { ExpenseWithCategory } from "@/lib/actions/expenses";
 import type { ExpenseCategoryWithRelations } from "@/lib/actions/expense-categories";
@@ -74,6 +75,8 @@ export function DashboardPageClient({
   const initialIndex = budgetOptions.findIndex((b) => b.id === budgetId);
   const [currentBudgetIndex, setCurrentBudgetIndex] = useState(initialIndex >= 0 ? initialIndex : 0);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
+  const [isCategoryDetailSheetOpen, setIsCategoryDetailSheetOpen] = useState(false);
 
   const monthLabel = budgetName || formatMonthYear(new Date(startDate));
   const dateRange = `${formatDate(new Date(startDate))} – ${formatDate(new Date(endDate))}`;
@@ -120,12 +123,34 @@ export function DashboardPageClient({
     },
   }));
 
+  const CATEGORY_COLORS: Record<string, string> = {
+    Necesidades: "#1C3D2E",
+    Gustos: "#52796F",
+    Ahorro: "#84A98C",
+  };
+
+  const selectedCategory = useMemo(() => {
+    if (!selectedCategoryId) return null;
+    const plan = expensePlans.find((p) => p.expenseCategory.budgetCategory.id === selectedCategoryId);
+    if (!plan) return null;
+    return {
+      id: selectedCategoryId,
+      name: plan.expenseCategory.budgetCategory.name,
+      color: CATEGORY_COLORS[plan.expenseCategory.budgetCategory.name] || "#1C3D2E",
+    };
+  }, [selectedCategoryId, expensePlans]);
+
+  function handleCategoryClick(categoryId: string) {
+    setSelectedCategoryId(categoryId);
+    setIsCategoryDetailSheetOpen(true);
+  }
 
   return (
     <div className="space-y-4 overflow-x-hidden">
       <DashboardHeader
         monthLabel={monthLabel}
         dateRange={dateRange}
+        budgetId={budgetId}
         onPrevious={handlePrevious}
         onNext={handleNext}
         canGoPrevious={canGoPrevious}
@@ -158,6 +183,7 @@ export function DashboardPageClient({
         }))}
         totalIncome={totalIncome}
         categoryPercentages={categoryPercentages}
+        onCategoryClick={handleCategoryClick}
         onRowClick={() => setIsSheetOpen(true)}
       />
 
@@ -171,6 +197,35 @@ export function DashboardPageClient({
         budgetId={budgetId}
         totalIncome={totalIncome}
       />
+
+      {selectedCategory && (
+        <ExpenseCategoryDetailSheet
+          open={isCategoryDetailSheetOpen}
+          onOpenChange={setIsCategoryDetailSheetOpen}
+          budgetCategoryId={selectedCategory.id}
+          budgetCategoryName={selectedCategory.name}
+          expensePlans={expensePlans}
+          expenses={expenses.map((e) => ({
+            amount: e.amount,
+            expenseCategory: {
+              id: e.expenseCategory.id,
+              name: e.expenseCategory.name,
+              budgetCategory: {
+                id: e.expenseCategory.budgetCategory.id,
+                name: e.expenseCategory.budgetCategory.name,
+                order: e.expenseCategory.budgetCategory.order,
+              },
+              subcategory: e.expenseCategory.subcategory
+                ? {
+                  id: e.expenseCategory.subcategory.id,
+                  name: e.expenseCategory.subcategory.name,
+                }
+                : null,
+            },
+          }))}
+          categoryColor={selectedCategory.color}
+        />
+      )}
 
       <NewBudgetFAB />
     </div>

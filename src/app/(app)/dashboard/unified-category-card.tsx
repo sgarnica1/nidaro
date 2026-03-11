@@ -43,6 +43,7 @@ type Props = {
   expenses: Expense[];
   totalIncome: number;
   categoryPercentages: Record<string, number>;
+  onCategoryClick?: (categoryId: string) => void;
   onRowClick?: () => void;
 };
 
@@ -53,6 +54,13 @@ type CategoryData = {
   assignedAmount: number;
   realAmount: number;
   color: string;
+  expenseCategories: Array<{
+    id: string;
+    name: string;
+    plannedAmount: number;
+    spentAmount: number;
+    remainingAmount: number;
+  }>;
 };
 
 function formatCurrency(amount: number) {
@@ -70,12 +78,47 @@ const CATEGORY_COLORS: Record<string, string> = {
   Ahorro: "#84A98C",
 };
 
-export function UnifiedCategoryCard({ expensePlans, expenses, totalIncome, categoryPercentages, onRowClick }: Props) {
+export function UnifiedCategoryCard({ expensePlans, expenses, totalIncome, categoryPercentages, onCategoryClick, onRowClick }: Props) {
   const categories = useMemo(() => {
     const realByCategory: Record<string, number> = {};
     for (const exp of expenses) {
       const catId = exp.expenseCategory.budgetCategory.id;
       realByCategory[catId] = (realByCategory[catId] ?? 0) + exp.amount;
+    }
+
+    const realByExpenseCategory: Record<string, number> = {};
+    for (const exp of expenses) {
+      const expCatId = exp.expenseCategory.id;
+      realByExpenseCategory[expCatId] = (realByExpenseCategory[expCatId] ?? 0) + exp.amount;
+    }
+
+    const plannedByExpenseCategory: Record<string, number> = {};
+    for (const plan of expensePlans) {
+      plannedByExpenseCategory[plan.expenseCategory.id] = plan.plannedAmount;
+    }
+
+    const expenseCategoriesByBudgetCategory: Record<string, Array<{
+      id: string;
+      name: string;
+      plannedAmount: number;
+      spentAmount: number;
+      remainingAmount: number;
+    }>> = {};
+
+    for (const plan of expensePlans) {
+      const budgetCatId = plan.expenseCategory.budgetCategory.id;
+      if (!expenseCategoriesByBudgetCategory[budgetCatId]) {
+        expenseCategoriesByBudgetCategory[budgetCatId] = [];
+      }
+      const spentAmount = realByExpenseCategory[plan.expenseCategory.id] ?? 0;
+      const remainingAmount = plan.plannedAmount - spentAmount;
+      expenseCategoriesByBudgetCategory[budgetCatId].push({
+        id: plan.expenseCategory.id,
+        name: plan.expenseCategory.name,
+        plannedAmount: plan.plannedAmount,
+        spentAmount,
+        remainingAmount,
+      });
     }
 
     const catNameMap: Record<string, string> = {};
@@ -102,6 +145,9 @@ export function UnifiedCategoryCard({ expensePlans, expenses, totalIncome, categ
         assignedAmount,
         realAmount,
         color: CATEGORY_COLORS[categoryName] || "#1C3D2E",
+        expenseCategories: expenseCategoriesByBudgetCategory[catId]?.sort((a, b) => 
+          a.name.localeCompare(b.name)
+        ) ?? [],
       };
     });
 
@@ -128,16 +174,23 @@ export function UnifiedCategoryCard({ expensePlans, expenses, totalIncome, categ
           const usagePct = category.assignedAmount > 0 ? (category.realAmount / category.assignedAmount) * 100 : 0;
           const progressColor =
             usagePct < 70 ? "#22C55E" : usagePct < 90 ? "#F59E0B" : "#DC2626";
+          const hasExpenseCategories = category.expenseCategories.length > 0;
 
           return (
             <div key={category.categoryId}>
               {index > 0 && <div className="h-px bg-[#F3F4F6]" />}
               <button
                 type="button"
-                onClick={onRowClick}
+                onClick={() => {
+                  if (hasExpenseCategories && onCategoryClick) {
+                    onCategoryClick(category.categoryId);
+                  } else if (onRowClick) {
+                    onRowClick();
+                  }
+                }}
                 className={cn(
                   "w-full flex items-center gap-4 h-[52px] px-0",
-                  onRowClick && "hover:opacity-80 transition-opacity cursor-pointer"
+                  (onRowClick || hasExpenseCategories) && "hover:opacity-80 transition-opacity cursor-pointer"
                 )}
               >
                 {/* Left: Colored square + name + badge */}

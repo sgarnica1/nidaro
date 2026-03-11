@@ -50,7 +50,7 @@ export function MobileNav() {
         (isSheetOpen || isWizardOpen || isTemplateDetailPage) && "hidden"
       )}
     >
-      <div className="flex h-16 items-center justify-around px-2">
+      <div className="flex h-16 items-center justify-between px-1">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = pathname.startsWith(item.href);
@@ -59,7 +59,7 @@ export function MobileNav() {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex flex-col items-center gap-1 rounded-lg px-3 py-2 text-xs transition-all duration-200",
+                "flex flex-col items-center justify-center gap-0.5 rounded-lg px-1.5 py-1.5 text-[10px] transition-all duration-200 flex-1 min-w-0",
                 isActive
                   ? "text-primary font-medium"
                   : "text-muted-foreground hover:text-foreground"
@@ -69,9 +69,9 @@ export function MobileNav() {
                 animate={{ scale: isActive ? 1.1 : 1 }}
                 transition={{ type: "spring", stiffness: 500, damping: 30 }}
               >
-                <Icon className={cn("h-5 w-5 transition-colors duration-200", isActive && "text-primary")} />
+                <Icon className={cn("h-4 w-4 transition-colors duration-200 shrink-0", isActive && "text-primary")} />
               </motion.div>
-              <span>{item.label}</span>
+              <span className="truncate w-full text-center leading-tight">{item.label}</span>
             </Link>
           );
         })}

@@ -43,7 +43,7 @@ export function GastosClient({
   const availableMonths = useMemo(() => {
     const monthSet = new Set<string>();
     expenses.forEach((exp) => {
-      const date = new Date(exp.date);
+      const date = exp.date instanceof Date ? exp.date : new Date(exp.date);
       monthSet.add(getMonthKey(date));
     });
     return Array.from(monthSet)
@@ -59,7 +59,7 @@ export function GastosClient({
       return expenses;
     }
     return expenses.filter((exp) => {
-      const date = new Date(exp.date);
+      const date = exp.date instanceof Date ? exp.date : new Date(exp.date);
       return getMonthKey(date) === selectedMonth;
     });
   }, [expenses, selectedMonth]);
@@ -75,7 +75,7 @@ export function GastosClient({
     : null;
 
   return (
-    <div className="overflow-x-hidden">
+    <div className="overflow-x-hidden pb-5">
       <div className="mb-8">
         <div className="flex items-start justify-between mb-6">
           <div>

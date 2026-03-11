@@ -104,6 +104,19 @@ export function TemplateItemForm({
   const selectedCategoryId = useWatch({ control: form.control, name: "expenseCategoryId" });
   const [amountInputValue, setAmountInputValue] = useState<string>("");
 
+  function formatNumberWithCommas(value: string): string {
+    const numericValue = value.replace(/,/g, "");
+    if (!numericValue || numericValue === ".") return numericValue;
+    const parts = numericValue.split(".");
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return parts.join(".");
+  }
+
+  function parseFormattedNumber(value: string): number {
+    const numericValue = value.replace(/,/g, "");
+    return parseFloat(numericValue) || 0;
+  }
+
   const previewTotal = useMemo(() => {
     if (editingItem) {
       return currentCategoryTotal - editingItem.plannedAmount + amount;
@@ -119,7 +132,12 @@ export function TemplateItemForm({
           expenseCategoryId: editingItem.expenseCategoryId,
           plannedAmount: editingItem.plannedAmount,
         });
-        setAmountInputValue(editingItem.plannedAmount > 0 ? editingItem.plannedAmount.toString() : "");
+        if (editingItem.plannedAmount > 0) {
+          const formatted = formatNumberWithCommas(editingItem.plannedAmount.toString());
+          setAmountInputValue(formatted);
+        } else {
+          setAmountInputValue("");
+        }
       } else {
         setAmountInputValue("");
       }
@@ -193,48 +211,60 @@ export function TemplateItemForm({
                   render={({ field }) => (
                     <FormItem>
                       <FormControl>
-                        <div className="relative">
+                        <div className="relative w-full">
                           <motion.div
                             animate={{ scale: amountFocused ? 1.02 : 1 }}
                             transition={{ duration: 0.2 }}
-                            className="flex items-center justify-center"
+                            className="flex items-center justify-center gap-2 w-full overflow-hidden"
                           >
-                            <span className="text-[32px] text-[#6B7280] mr-3 font-medium">$</span>
-                            <input
-                              ref={amountInputRef}
-                              type="text"
-                              inputMode="decimal"
-                              placeholder="0"
-                              value={amountInputValue}
-                              onFocus={() => {
-                                setAmountFocused(true);
-                                if (amount > 0 && amountInputValue === "") {
-                                  setAmountInputValue(amount.toString());
-                                }
-                              }}
-                              onBlur={() => {
-                                setAmountFocused(false);
-                                const numValue = parseFloat(amountInputValue) || 0;
-                                field.onChange(numValue);
-                                setAmountInputValue(numValue > 0 ? numValue.toString() : "");
-                              }}
-                              onChange={(e) => {
-                                const rawValue = e.target.value;
-                                if (rawValue === "" || /^\d*\.?\d*$/.test(rawValue)) {
-                                  setAmountInputValue(rawValue);
-                                  const numValue = parseFloat(rawValue) || 0;
+                            <span className="text-[32px] text-[#6B7280] font-medium shrink-0">$</span>
+                            <div className="flex-1 min-w-0 flex justify-center overflow-x-auto" style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}>
+                              <input
+                                ref={amountInputRef}
+                                type="text"
+                                inputMode="decimal"
+                                placeholder="0"
+                                value={amountInputValue}
+                                onFocus={() => {
+                                  setAmountFocused(true);
+                                  if (amount > 0 && amountInputValue === "") {
+                                    const formatted = formatNumberWithCommas(amount.toString());
+                                    setAmountInputValue(formatted);
+                                  }
+                                }}
+                                onBlur={() => {
+                                  setAmountFocused(false);
+                                  const numValue = parseFormattedNumber(amountInputValue);
                                   field.onChange(numValue);
-                                }
-                              }}
-                              className={cn(
-                                "w-full text-center bg-transparent border-none outline-none focus:outline-none",
-                                "text-[56px] font-bold tabular-nums",
-                                "placeholder:text-[#D1D5DB] placeholder:text-[56px]",
-                                amountFocused ? "text-[#1C3D2E]" : "text-[#111111]",
-                                "transition-colors"
-                              )}
-                            />
-                            <span className="text-[14px] text-[#6B7280] ml-3 mt-4 font-medium">MXN</span>
+                                  if (numValue > 0) {
+                                    const formatted = formatNumberWithCommas(numValue.toString());
+                                    setAmountInputValue(formatted);
+                                  } else {
+                                    setAmountInputValue("");
+                                  }
+                                }}
+                                onChange={(e) => {
+                                  const rawValue = e.target.value.replace(/,/g, "");
+                                  if (rawValue === "" || /^\d*\.?\d*$/.test(rawValue)) {
+                                    const formatted = formatNumberWithCommas(rawValue);
+                                    setAmountInputValue(formatted);
+                                    const numValue = parseFormattedNumber(formatted);
+                                    field.onChange(numValue);
+                                  }
+                                }}
+                                className={cn(
+                                  "text-center bg-transparent border-none outline-none focus:outline-none",
+                                  "text-[56px] font-bold tabular-nums",
+                                  "placeholder:text-[#D1D5DB] placeholder:text-[56px]",
+                                  amountFocused ? "text-[#1C3D2E]" : "text-[#111111]",
+                                  "transition-colors w-full max-w-full"
+                                )}
+                                style={{ 
+                                  minWidth: "fit-content"
+                                }}
+                              />
+                            </div>
+                            <span className="text-[14px] text-[#6B7280] mt-4 font-medium shrink-0">MXN</span>
                           </motion.div>
                         </div>
                       </FormControl>
@@ -257,7 +287,8 @@ export function TemplateItemForm({
                         type="button"
                         whileTap={{ scale: 0.95 }}
                         onClick={() => {
-                          setAmountInputValue(suggestion.toString());
+                          const formatted = formatNumberWithCommas(suggestion.toString());
+                          setAmountInputValue(formatted);
                           form.setValue("plannedAmount", suggestion);
                         }}
                         className="px-4 py-2 text-[14px] font-medium text-[#6B7280] bg-[#F3F4F6] rounded-xl hover:bg-[#E5E7EB] transition-colors"
