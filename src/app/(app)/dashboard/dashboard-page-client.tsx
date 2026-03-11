@@ -150,6 +150,7 @@ export function DashboardPageClient({
       <DashboardHeader
         monthLabel={monthLabel}
         dateRange={dateRange}
+        budgetId={budgetId}
         onPrevious={handlePrevious}
         onNext={handleNext}
         canGoPrevious={canGoPrevious}

@@ -373,6 +373,7 @@ export async function upsertBudgetExpensePlan(
     });
 
     revalidatePath("/dashboard");
+    revalidatePath(`/presupuestos/${parsed.budgetId}`);
     return {
       success: true,
       data: {
@@ -422,6 +423,7 @@ export async function deleteBudgetExpensePlan(
     });
 
     revalidatePath("/dashboard");
+    revalidatePath(`/presupuestos/${budgetId}`);
     return { success: true, data: undefined };
   } catch (e) {
     return { success: false, error: e instanceof Error ? e.message : "Error desconocido" };
