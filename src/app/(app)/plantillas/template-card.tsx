@@ -207,6 +207,17 @@ export function TemplateCard({
 
   useEffect(() => {
     if (expandedSections.size === 0) {
+      const necesidadesCategory = budgetCategories.find((bc) => bc.name === "Necesidades");
+      if (necesidadesCategory) {
+        const items = template.items.filter((i) => i.expenseCategory.budgetCategory.id === necesidadesCategory.id);
+        const gastosFijosItems = items.filter((i) => i.expenseCategory.subcategory?.name === "Gastos Fijos");
+        if (gastosFijosItems.length > 0) {
+          setTimeout(() => {
+            setExpandedSections(new Set([`${necesidadesCategory.id}-gastos-fijos`]));
+          }, 0);
+          return;
+        }
+      }
       const firstWithData = budgetCategories.find((bc) => {
         const items = template.items.filter((i) => i.expenseCategory.budgetCategory.id === bc.id);
         return items.length > 0;
@@ -297,11 +308,282 @@ export function TemplateCard({
       {/* Category Cards */}
       <div className="space-y-4">
         {budgetCategories.map((bc) => {
-          const items = template.items.filter((i) => i.expenseCategory.budgetCategory.id === bc.id);
+          const allItems = template.items.filter((i) => i.expenseCategory.budgetCategory.id === bc.id);
           const sectionTotal = categoryTotals[bc.id] ?? 0;
-          const isExpanded = expandedSections.has(bc.id);
           const categoryColor = CATEGORY_COLORS[bc.name] || "#6B7280";
           const categoryPercentage = categoryPercentages[bc.id] ?? 0;
+
+          const shouldSplitBySubcategory = bc.name === "Necesidades";
+
+          if (shouldSplitBySubcategory) {
+            const gastosFijosItems = allItems.filter((i) => i.expenseCategory.subcategory?.name === "Gastos Fijos");
+            const gastosVariablesItems = allItems.filter((i) => i.expenseCategory.subcategory?.name === "Gastos Variables Necesarios");
+            const itemsWithoutSubcategory = allItems.filter((i) => !i.expenseCategory.subcategory);
+
+            const gastosFijosTotal = gastosFijosItems.reduce((sum, i) => sum + Number(i.plannedAmount), 0);
+            const gastosVariablesTotal = gastosVariablesItems.reduce((sum, i) => sum + Number(i.plannedAmount), 0);
+            const itemsWithoutSubcategoryTotal = itemsWithoutSubcategory.reduce((sum, i) => sum + Number(i.plannedAmount), 0);
+
+            const subcategories = [
+              {
+                id: "gastos-fijos",
+                name: "Gastos Fijos",
+                items: gastosFijosItems,
+                total: gastosFijosTotal,
+                order: 1,
+              },
+              {
+                id: "gastos-variables",
+                name: "Gastos Variables Necesarios",
+                items: gastosVariablesItems,
+                total: gastosVariablesTotal,
+                order: 2,
+              },
+            ].filter((sub) => sub.items.length > 0 || sub.total > 0);
+
+            if (itemsWithoutSubcategory.length > 0) {
+              subcategories.push({
+                id: "sin-subcategoria",
+                name: "Sin subcategoría",
+                items: itemsWithoutSubcategory,
+                total: itemsWithoutSubcategoryTotal,
+                order: 3,
+              });
+            }
+
+            return (
+              <div key={bc.id} className="space-y-4">
+                {subcategories.map((subcat) => {
+                  const isExpanded = expandedSections.has(`${bc.id}-${subcat.id}`);
+                  const subcatPercentage = sectionTotal > 0 ? (subcat.total / sectionTotal) * 100 : 0;
+
+                  return (
+                    <motion.div
+                      key={subcat.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: subcat.order * 0.05 }}
+                    >
+                      <div className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.04)] overflow-hidden">
+                        <button
+                          type="button"
+                          className="w-full flex items-center justify-between p-5 hover:bg-[#FAFAFA] transition-colors"
+                          onClick={() => toggleSection(`${bc.id}-${subcat.id}`)}
+                        >
+                          <div className="flex items-center gap-4 flex-1">
+                            <div
+                              className="h-3 w-3 rounded-full shrink-0"
+                              style={{ backgroundColor: categoryColor }}
+                            />
+                            <div className="flex-1 text-left">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-[16px] font-bold text-[#111111]">{subcat.name}</span>
+                                {subcat.items.length > 0 && (
+                                  <span className="text-[12px] text-[#6B7280] bg-[#F3F4F6] px-2 py-0.5 rounded-full">
+                                    {subcat.items.length} {subcat.items.length === 1 ? "gasto" : "gastos"}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-[18px] font-bold text-[#111111]">{formatCurrency(subcat.total)}</span>
+                                {sectionTotal > 0 && (
+                                  <span className="text-[13px] text-[#6B7280]">{subcatPercentage.toFixed(1)}% de {bc.name}</span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <motion.div
+                            animate={{ rotate: isExpanded ? 180 : 0 }}
+                            transition={{ duration: 0.2 }}
+                          >
+                            <ChevronDown className="h-5 w-5 text-[#6B7280] shrink-0" />
+                          </motion.div>
+                        </button>
+
+                        <AnimatePresence>
+                          {isExpanded && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.3, ease: "easeInOut" }}
+                              className="overflow-hidden"
+                            >
+                              <div className="px-5 pb-5 pt-2">
+                                {subcat.items.length === 0 ? (
+                                  <div className="py-8 text-center">
+                                    <p className="text-[14px] text-[#6B7280] mb-4">No hay gastos en esta subcategoría</p>
+                                    <TemplateItemForm
+                                      templateId={template.id}
+                                      expenseCategories={expenseCategories}
+                                      budgetCategories={budgetCategories}
+                                      filterBudgetCategoryId={bc.id}
+                                      existingItemCategoryIds={existingCategoryIds}
+                                      currentCategoryTotal={subcat.total}
+                                      onItemAdded={() => router.refresh()}
+                                    >
+                                      <div className="bg-[#F8F9FA] border-2 border-dashed border-[#E5E7EB] rounded-xl p-4 hover:bg-[#F3F4F6] transition-colors cursor-pointer">
+                                        <div className="flex items-center justify-center gap-2 text-[#6B7280]">
+                                          <Plus className="h-5 w-5" />
+                                          <span className="text-[14px] font-medium">Agregar gasto</span>
+                                        </div>
+                                        <p className="text-[12px] text-[#9CA3AF] mt-1 text-center">Toca para agregar un gasto a esta subcategoría</p>
+                                      </div>
+                                    </TemplateItemForm>
+                                  </div>
+                                ) : (
+                                  <div className="space-y-1">
+                                    {subcat.items.map((item, index) => {
+                                      const itemPct = subcat.total > 0 ? (Number(item.plannedAmount) / subcat.total) * 100 : 0;
+                                      const isSwiped = swipedItemId === item.id;
+
+                                      return (
+                                        <motion.div
+                                          key={item.id}
+                                          initial={{ opacity: 0, scale: 0.95 }}
+                                          animate={{ opacity: 1, scale: 1 }}
+                                          transition={{ duration: 0.2, delay: index * 0.03 }}
+                                          data-item-id={item.id}
+                                          className={cn(
+                                            "relative flex items-center gap-3 p-3 rounded-xl overflow-hidden",
+                                            "hover:bg-[#FAFAFA] transition-colors",
+                                            isSwiped && "bg-[#FAFAFA]"
+                                          )}
+                                          onTouchStart={(e) => {
+                                            const touch = e.touches[0];
+                                            const startX = touch.clientX;
+                                            let moved = false;
+
+                                            const handleMove = (moveEvent: TouchEvent) => {
+                                              const currentX = moveEvent.touches[0].clientX;
+                                              const diff = startX - currentX;
+                                              if (Math.abs(diff) > 10) {
+                                                moved = true;
+                                              }
+                                              if (diff > 80) {
+                                                setSwipedItemId(item.id);
+                                              } else if (diff < -80) {
+                                                setSwipedItemId(null);
+                                              }
+                                            };
+
+                                            const handleEnd = () => {
+                                              if (!moved && swipedItemId === item.id) {
+                                                setSwipedItemId(null);
+                                              }
+                                              document.removeEventListener("touchmove", handleMove as EventListener);
+                                              document.removeEventListener("touchend", handleEnd);
+                                            };
+
+                                            document.addEventListener("touchmove", handleMove as EventListener);
+                                            document.addEventListener("touchend", handleEnd);
+                                          }}
+                                        >
+                                          <div className={cn(
+                                            "absolute inset-y-0 right-0 flex items-center transition-transform duration-200 z-10",
+                                            isSwiped ? "translate-x-0" : "translate-x-full"
+                                          )}>
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-full w-14 bg-[#3B82F6] hover:bg-[#2563EB] rounded-l-xl rounded-r-none"
+                                              onClick={() => handleStartEdit({
+                                                id: item.id,
+                                                expenseCategoryId: item.expenseCategory.id,
+                                                plannedAmount: Number(item.plannedAmount),
+                                              })}
+                                            >
+                                              <Pencil className="h-4 w-4 text-white" />
+                                            </Button>
+                                            <Button
+                                              variant="ghost"
+                                              size="icon"
+                                              className="h-full w-14 bg-[#DC2626] hover:bg-[#B91C1C] rounded-r-xl rounded-l-none"
+                                              onClick={() => handleDeleteItem(item.id)}
+                                            >
+                                              <Trash2 className="h-4 w-4 text-white" />
+                                            </Button>
+                                          </div>
+
+                                          <div className={cn(
+                                            "flex items-center gap-3 flex-1 transition-transform duration-200",
+                                            isSwiped && "-translate-x-28"
+                                          )}>
+                                            <div
+                                              className="h-10 w-10 rounded-xl flex items-center justify-center shrink-0 text-lg shadow-sm"
+                                              style={{
+                                                backgroundColor: `${item.expenseCategory.color}15`,
+                                              }}
+                                            >
+                                              {getCategoryIcon(item.expenseCategory)}
+                                            </div>
+
+                                            <div className="flex-1 min-w-0 overflow-hidden">
+                                              <p className="text-[15px] font-medium text-[#111111] truncate max-w-full">
+                                                {item.expenseCategory.name}
+                                              </p>
+                                              <p className="text-[12px] text-[#6B7280] truncate">{itemPct.toFixed(1)}% de {subcat.name}</p>
+                                            </div>
+
+                                            <div className="text-right shrink-0">
+                                              <p
+                                                className="text-[16px] font-bold text-[#111111] tabular-nums cursor-pointer hover:text-[#1C3D2E] transition-colors"
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handleStartEdit({
+                                                    id: item.id,
+                                                    expenseCategoryId: item.expenseCategory.id,
+                                                    plannedAmount: Number(item.plannedAmount),
+                                                  });
+                                                }}
+                                              >
+                                                {formatCurrency(Number(item.plannedAmount))}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        </motion.div>
+                                      );
+                                    })}
+
+                                    <motion.div
+                                      initial={{ opacity: 0 }}
+                                      animate={{ opacity: 1 }}
+                                      transition={{ delay: subcat.items.length * 0.03 }}
+                                      className="mt-3"
+                                    >
+                                      <TemplateItemForm
+                                        templateId={template.id}
+                                        expenseCategories={expenseCategories}
+                                        budgetCategories={budgetCategories}
+                                        filterBudgetCategoryId={bc.id}
+                                        existingItemCategoryIds={existingCategoryIds}
+                                        currentCategoryTotal={subcat.total}
+                                        onItemAdded={() => router.refresh()}
+                                      >
+                                        <div className="bg-[#F8F9FA] border-2 border-dashed border-[#E5E7EB] rounded-xl p-4 hover:bg-[#F3F4F6] transition-colors cursor-pointer">
+                                          <div className="flex items-center justify-center gap-2 text-[#6B7280]">
+                                            <Plus className="h-5 w-5" />
+                                            <span className="text-[14px] font-medium">Agregar gasto</span>
+                                          </div>
+                                          <p className="text-[12px] text-[#9CA3AF] mt-1 text-center">Toca para agregar otro gasto a esta subcategoría</p>
+                                        </div>
+                                      </TemplateItemForm>
+                                    </motion.div>
+                                  </div>
+                                )}
+                              </div>
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            );
+          }
+
+          const isExpanded = expandedSections.has(bc.id);
 
           return (
             <motion.div
@@ -325,9 +607,9 @@ export function TemplateCard({
                     <div className="flex-1 text-left">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="text-[16px] font-bold text-[#111111]">{bc.name}</span>
-                        {items.length > 0 && (
+                        {allItems.length > 0 && (
                           <span className="text-[12px] text-[#6B7280] bg-[#F3F4F6] px-2 py-0.5 rounded-full">
-                            {items.length} {items.length === 1 ? "gasto" : "gastos"}
+                            {allItems.length} {allItems.length === 1 ? "gasto" : "gastos"}
                           </span>
                         )}
                       </div>
@@ -358,7 +640,7 @@ export function TemplateCard({
                       className="overflow-hidden"
                     >
                       <div className="px-5 pb-5 pt-2">
-                        {items.length === 0 ? (
+                        {allItems.length === 0 ? (
                           <div className="py-8 text-center">
                             <p className="text-[14px] text-[#6B7280] mb-4">No hay gastos en esta categoría</p>
                             <TemplateItemForm
@@ -381,7 +663,7 @@ export function TemplateCard({
                           </div>
                         ) : (
                           <div className="space-y-1">
-                            {items.map((item, index) => {
+                            {allItems.map((item, index) => {
                               const itemPct = sectionTotal > 0 ? (Number(item.plannedAmount) / sectionTotal) * 100 : 0;
                               const isSwiped = swipedItemId === item.id;
 
@@ -502,7 +784,7 @@ export function TemplateCard({
                             <motion.div
                               initial={{ opacity: 0 }}
                               animate={{ opacity: 1 }}
-                              transition={{ delay: items.length * 0.03 }}
+                              transition={{ delay: allItems.length * 0.03 }}
                               className="mt-3"
                             >
                               <TemplateItemForm
