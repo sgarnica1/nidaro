@@ -44,6 +44,23 @@ export type BudgetWithDetails = SerializedBudget & {
   expensePlans: SerializedBudgetExpensePlan[];
 };
 
+export async function checkBudgetDateOverlap(startDate: string, endDate: string): Promise<{ overlaps: boolean }> {
+  const user = await getCurrentUser();
+  const newStart = new Date(startDate);
+  const newEnd = new Date(endDate);
+
+  const overlapping = await prisma.budget.findFirst({
+    where: {
+      userId: user.id,
+      startDate: { lte: newEnd },
+      endDate: { gte: newStart },
+    },
+    select: { id: true },
+  });
+
+  return { overlaps: !!overlapping };
+}
+
 export async function getBudgets(): Promise<SerializedBudget[]> {
   const user = await getCurrentUser();
   const budgets = await prisma.budget.findMany({
@@ -231,6 +248,24 @@ export async function createBudget(
       return d.type === "PERCENTAGE" ? sum + (grossIncome * d.value) / 100 : sum + d.value;
     }, 0);
     const availableIncome = grossIncome - totalDeductions;
+
+    const newStart = new Date(parsed.startDate);
+    const newEnd = new Date(parsed.endDate);
+
+    const overlapping = await prisma.budget.findFirst({
+      where: {
+        userId: user.id,
+        startDate: { lte: newEnd },
+        endDate: { gte: newStart },
+      },
+    });
+
+    if (overlapping) {
+      return {
+        success: false,
+        error: "Ya existe un presupuesto en ese rango de fechas. Elige fechas que no se traslapen con presupuestos existentes.",
+      };
+    }
 
     const budget = await prisma.$transaction(async (tx) => {
       const b = await tx.budget.create({

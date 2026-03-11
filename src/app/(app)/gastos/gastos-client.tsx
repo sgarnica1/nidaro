@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Plus } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ExpenseList } from "./expense-list";
 import { ExpenseForm } from "./expense-form";
@@ -13,6 +14,10 @@ type Props = {
   expenses: ExpenseWithCategory[];
   expenseCategories: ExpenseCategoryWithRelations[];
   budgetId: string;
+  budgetName: string | null;
+  startDate: Date;
+  endDate: Date;
+  budgetOptions: Array<{ id: string; label: string; startDate: Date; endDate: Date }>;
 };
 
 function formatCurrency(amount: number) {
@@ -32,13 +37,58 @@ function getMonthLabel(date: Date): string {
   return new Intl.DateTimeFormat("es-MX", { month: "long" }).format(date);
 }
 
+function formatDate(date: Date): string {
+  return new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short", timeZone: "UTC" }).format(date);
+}
+
+function formatMonthYear(date: Date): string {
+  return new Intl.DateTimeFormat("es-MX", { month: "long", year: "numeric", timeZone: "UTC" }).format(date);
+}
+
 export function GastosClient({
   expenses,
   expenseCategories,
   budgetId,
+  budgetName,
+  startDate,
+  endDate,
+  budgetOptions,
 }: Props) {
+  const router = useRouter();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+
+  const initialIndex = budgetOptions.findIndex((b) => b.id === budgetId);
+  const [currentBudgetIndex, setCurrentBudgetIndex] = useState(initialIndex >= 0 ? initialIndex : 0);
+
+  useEffect(() => {
+    const newIndex = budgetOptions.findIndex((b) => b.id === budgetId);
+    if (newIndex >= 0) {
+      setCurrentBudgetIndex(newIndex);
+    }
+  }, [budgetId, budgetOptions]);
+
+  const monthLabel = budgetName || formatMonthYear(new Date(startDate));
+  const dateRange = `${formatDate(new Date(startDate))} – ${formatDate(new Date(endDate))}`;
+
+  const canGoPrevious = currentBudgetIndex > 0;
+  const canGoNext = currentBudgetIndex < budgetOptions.length - 1;
+
+  function handlePrevious() {
+    if (canGoPrevious) {
+      const newIndex = currentBudgetIndex - 1;
+      setCurrentBudgetIndex(newIndex);
+      router.push(`/gastos?budgetId=${budgetOptions[newIndex].id}`);
+    }
+  }
+
+  function handleNext() {
+    if (canGoNext) {
+      const newIndex = currentBudgetIndex + 1;
+      setCurrentBudgetIndex(newIndex);
+      router.push(`/gastos?budgetId=${budgetOptions[newIndex].id}`);
+    }
+  }
 
   const availableMonths = useMemo(() => {
     const monthSet = new Set<string>();
@@ -70,28 +120,55 @@ export function GastosClient({
 
   const currentMonthCount = filteredExpenses.length;
 
-  const monthLabel = selectedMonth
+  const selectedMonthLabel = selectedMonth
     ? availableMonths.find((m) => m.key === selectedMonth)?.label
     : null;
 
   return (
     <div className="overflow-x-hidden pb-5">
       <div className="mb-8">
-        <div className="flex items-start justify-between mb-6">
-          <div>
-            <h1 className="text-[22px] font-semibold text-[#111111] mb-1">Gastos</h1>
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-1">
+            <div className="flex items-center justify-between gap-2 w-full">
+              <h1 className="text-[28px] font-bold text-[#111111] tracking-tight">
+                Gastos
+              </h1>
+              {budgetOptions.length > 1 && (
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-11 w-11 text-[#6B7280] hover:text-[#111111] hover:bg-[#F3F4F6]"
+                    onClick={handlePrevious}
+                    disabled={!canGoPrevious}
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-11 w-11 text-[#6B7280] hover:text-[#111111] hover:bg-[#F3F4F6]"
+                    onClick={handleNext}
+                    disabled={!canGoNext}
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </Button>
+                </div>
+              )}
+            </div>
+            <ExpenseForm
+              budgetId={budgetId}
+              expenseCategories={expenseCategories}
+              open={isFormOpen}
+              onOpenChange={setIsFormOpen}
+            >
+              <Button className="hidden md:flex bg-[#1C3D2E] hover:bg-[#1C3D2E]/90 text-white h-10 px-4 rounded-xl">
+                <Plus className="h-4 w-4 mr-2" />
+                Nuevo gasto
+              </Button>
+            </ExpenseForm>
           </div>
-          <ExpenseForm
-            budgetId={budgetId}
-            expenseCategories={expenseCategories}
-            open={isFormOpen}
-            onOpenChange={setIsFormOpen}
-          >
-            <Button className="hidden md:flex bg-[#1C3D2E] hover:bg-[#1C3D2E]/90 text-white h-10 px-4 rounded-xl">
-              <Plus className="h-4 w-4 mr-2" />
-              Nuevo gasto
-            </Button>
-          </ExpenseForm>
+          <p className="text-[12px] text-[#6B7280]"><span className="font-bold">{monthLabel}</span> - {dateRange}</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.04)] p-5 mb-6">
@@ -100,7 +177,7 @@ export function GastosClient({
           </p>
           <p className="text-[13px] text-[#6B7280]">
             {currentMonthCount} {currentMonthCount === 1 ? "gasto" : "gastos"}{" "}
-            {monthLabel ? `en ${monthLabel}` : "en total"}
+            {selectedMonthLabel ? `en ${selectedMonthLabel}` : "en total"}
           </p>
         </div>
 

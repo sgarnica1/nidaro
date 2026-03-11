@@ -234,10 +234,18 @@ export function BudgetCard({
             const gastosVariablesTotal = gastosVariablesPlans.reduce((sum, p) => sum + p.plannedAmount, 0);
             const plansWithoutSubcategoryTotal = plansWithoutSubcategory.reduce((sum, p) => sum + p.plannedAmount, 0);
 
-            const subcategories = [
+            const subcategories: Array<{
+              id: string;
+              name: string;
+              dbName: string | undefined;
+              plans: typeof gastosFijosPlans;
+              total: number;
+              order: number;
+            }> = [
               {
                 id: "gastos-fijos",
                 name: "Gastos Fijos",
+                dbName: "Gastos Fijos",
                 plans: gastosFijosPlans,
                 total: gastosFijosTotal,
                 order: 1,
@@ -245,16 +253,18 @@ export function BudgetCard({
               {
                 id: "gastos-variables",
                 name: "Variables Necesarios",
+                dbName: "Gastos Variables Necesarios",
                 plans: gastosVariablesPlans,
                 total: gastosVariablesTotal,
                 order: 2,
               },
-            ].filter((sub) => sub.plans.length > 0 || sub.total > 0);
+            ];
 
             if (plansWithoutSubcategory.length > 0) {
               subcategories.push({
                 id: "sin-subcategoria",
                 name: "Sin subcategoría",
+                dbName: undefined,
                 plans: plansWithoutSubcategory,
                 total: plansWithoutSubcategoryTotal,
                 order: 3,
@@ -328,6 +338,7 @@ export function BudgetCard({
                                       expenseCategories={expenseCategories}
                                       budgetCategories={budgetCategories}
                                       filterBudgetCategoryId={bc.id}
+                                      filterSubcategoryName={subcat.dbName}
                                       existingPlanCategoryIds={existingPlanCategoryIds}
                                       currentCategoryTotal={subcat.total}
                                       onPlanAdded={() => router.refresh()}
@@ -464,6 +475,7 @@ export function BudgetCard({
                                         expenseCategories={expenseCategories}
                                         budgetCategories={budgetCategories}
                                         filterBudgetCategoryId={bc.id}
+                                        filterSubcategoryName={subcat.dbName}
                                         existingPlanCategoryIds={existingPlanCategoryIds}
                                         currentCategoryTotal={subcat.total}
                                         onPlanAdded={() => router.refresh()}

@@ -23,7 +23,7 @@ export function DateRangePickerSheet({ open, onOpenChange, dateRange, onSelect }
 
   return (
     <ResponsiveSheet open={open} onOpenChange={onOpenChange} title="Seleccionar período" showDragHandle={true}>
-      <div className="px-4 pb-4">
+      <div className="px-4 pb-4 flex justify-center items-center flex-col">
         <Calendar
           mode="range"
           defaultMonth={dateRange?.from}
@@ -35,17 +35,17 @@ export function DateRangePickerSheet({ open, onOpenChange, dateRange, onSelect }
           classNames={{
             day: "h-12 w-12 text-base",
             day_button: "h-12 w-12 text-base",
-            month_caption: "h-12 text-lg mb-3 relative z-10",
-            nav: "relative mb-3",
+            month_caption: "h-12 text-lg mb-3 relative z-10 justify-start pl-1",
+            nav: "absolute top-0 right-0 flex items-center gap-1 z-20 mb-3",
             caption_label: "text-lg font-semibold",
             weekdays: "flex flex-row mb-2 mt-1",
             weekday: "h-10 text-sm text-center flex-1 flex items-center justify-center min-w-0",
-            month: "gap-3",
+            month: "gap-3 relative",
             table: "w-full",
           }}
         />
         {dateRange?.from && dateRange?.to && (
-          <div className="mt-4 pt-4 border-t border-[#F3F4F6]">
+          <div className="mt-4 pt-4 border-t border-[#F3F4F6] w-full">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="text-[13px] text-[#6B7280] mb-1">Desde</p>

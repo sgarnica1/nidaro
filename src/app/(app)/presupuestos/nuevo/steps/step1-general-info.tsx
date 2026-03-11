@@ -26,9 +26,10 @@ type Props = {
   templates: BudgetTemplate[];
   dateRange: DateRange | undefined;
   onDateRangeClick: () => void;
+  dateError?: string | null;
 };
 
-export function Step1GeneralInfo({ form, templates, dateRange, onDateRangeClick }: Props) {
+export function Step1GeneralInfo({ form, templates, dateRange, onDateRangeClick, dateError }: Props) {
   const nameInputRef = useRef<HTMLInputElement>(null);
   const useTemplate = !!form.watch("templateId");
 
@@ -61,7 +62,11 @@ export function Step1GeneralInfo({ form, templates, dateRange, onDateRangeClick 
       <button
         type="button"
         onClick={onDateRangeClick}
-        className="w-full bg-white rounded-[14px] shadow-sm border border-[#E5E7EB] h-[56px] flex items-center px-4 mb-6"
+        className={cn(
+          "w-full bg-white rounded-[14px] shadow-sm border h-[56px] flex items-center px-4",
+          dateError ? "border-red-400" : "border-[#E5E7EB]",
+          dateError ? "mb-2" : "mb-6"
+        )}
       >
         <CalendarIcon className="h-5 w-5 text-[#1C3D2E] mr-3" />
         <span className="flex-1 text-left text-[15px] font-medium text-[#111111]">
@@ -69,6 +74,9 @@ export function Step1GeneralInfo({ form, templates, dateRange, onDateRangeClick 
         </span>
         <ChevronRight className="h-5 w-5 text-[#6B7280]" />
       </button>
+      {dateError && (
+        <p className="text-[13px] text-red-500 mb-6">{dateError}</p>
+      )}
 
       {templates.length > 0 && (
         <div className="mb-6">
