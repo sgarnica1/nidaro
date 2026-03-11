@@ -234,7 +234,14 @@ export function BudgetCard({
             const gastosVariablesTotal = gastosVariablesPlans.reduce((sum, p) => sum + p.plannedAmount, 0);
             const plansWithoutSubcategoryTotal = plansWithoutSubcategory.reduce((sum, p) => sum + p.plannedAmount, 0);
 
-            const subcategories = [
+            const subcategories: Array<{
+              id: string;
+              name: string;
+              dbName: string | undefined;
+              plans: typeof gastosFijosPlans;
+              total: number;
+              order: number;
+            }> = [
               {
                 id: "gastos-fijos",
                 name: "Gastos Fijos",
