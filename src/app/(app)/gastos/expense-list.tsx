@@ -42,15 +42,13 @@ function formatCurrency(amount: number) {
   }).format(amount);
 }
 
+function toDate(date: Date | string): Date {
+  if (date instanceof Date) return date;
+  return new Date(date);
+}
+
 function formatDate(date: Date | string): string {
-  let dateObj: Date;
-  if (typeof date === "string") {
-    const [year, month, day] = date.split("-").map(Number);
-    dateObj = new Date(year, month - 1, day);
-  } else {
-    dateObj = date;
-  }
-  return new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short" }).format(dateObj);
+  return new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short" }).format(toDate(date));
 }
 
 function darkenHex(hex: string, factor = 0.7): string {
@@ -78,7 +76,7 @@ function getCategoryIcon(category: ExpenseCategoryWithRelations) {
 function groupByMonth(expenses: ExpenseWithCategory[]): MonthGroup[] {
   const map = new Map<string, MonthGroup>();
   for (const exp of expenses) {
-    const d = exp.date instanceof Date ? exp.date : new Date(exp.date);
+    const d = toDate(exp.date);
     const year = d.getFullYear();
     const month = d.getMonth();
     const key = `${year}-${month}`;
