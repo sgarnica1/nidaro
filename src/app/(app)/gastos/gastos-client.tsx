@@ -75,7 +75,7 @@ export function GastosClient({
     : null;
 
   return (
-    <div className="overflow-x-hidden">
+    <div className="overflow-x-hidden pb-5">
       <div className="mb-8">
         <div className="flex items-start justify-between mb-6">
           <div>

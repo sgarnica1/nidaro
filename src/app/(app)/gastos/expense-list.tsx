@@ -165,8 +165,8 @@ export function ExpenseList({ expenses, expenseCategories, budgetId, onAddExpens
                     >
                       {getCategoryIcon(category)}
                     </div>
-                    <div className="flex-1 min-w-0 text-left">
-                      <p className="text-[15px] font-medium text-[#111111] mb-1 line-clamp-2 break-words">
+                    <div className="flex-1 min-w-0 text-left overflow-hidden">
+                      <p className="text-[15px] font-medium text-[#111111] mb-1 truncate">
                         {expense.name}
                       </p>
                       <div className="flex items-center gap-2 flex-wrap">

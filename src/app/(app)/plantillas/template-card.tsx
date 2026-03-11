@@ -396,11 +396,11 @@ export function TemplateCard({
                                     </div>
 
                                     {/* Name and Percentage */}
-                                    <div className="flex-1 min-w-0">
-                                      <p className="text-[15px] font-medium text-[#111111] truncate">
+                                    <div className="flex-1 min-w-0 overflow-hidden">
+                                      <p className="text-[15px] font-medium text-[#111111] truncate max-w-full">
                                         {item.expenseCategory.name}
                                       </p>
-                                      <p className="text-[12px] text-[#6B7280]">{itemPct.toFixed(1)}% de {bc.name}</p>
+                                      <p className="text-[12px] text-[#6B7280] truncate">{itemPct.toFixed(1)}% de {bc.name}</p>
                                     </div>
 
                                     {/* Amount */}
