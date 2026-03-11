@@ -48,11 +48,11 @@ type Props = {
 };
 
 function formatDate(date: Date): string {
-  return new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short" }).format(date);
+  return new Intl.DateTimeFormat("es-MX", { day: "numeric", month: "short", timeZone: "UTC" }).format(date);
 }
 
 function formatMonthYear(date: Date): string {
-  return new Intl.DateTimeFormat("es-MX", { month: "long", year: "numeric" }).format(date);
+  return new Intl.DateTimeFormat("es-MX", { month: "long", year: "numeric", timeZone: "UTC" }).format(date);
 }
 
 export function DashboardPageClient({

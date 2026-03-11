@@ -44,6 +44,7 @@ type Props = {
   expenseCategories: ExpenseCategoryWithRelations[];
   budgetCategories: BudgetCategoryWithSubs[];
   filterBudgetCategoryId?: string;
+  filterSubcategoryName?: string;
   existingPlanCategoryIds?: string[];
   children: React.ReactNode;
   onPlanAdded?: () => void;
@@ -61,6 +62,7 @@ export function BudgetExpensePlanForm({
   expenseCategories: initialExpenseCategories,
   budgetCategories,
   filterBudgetCategoryId,
+  filterSubcategoryName,
   existingPlanCategoryIds = [],
   children,
   onPlanAdded,
@@ -86,6 +88,9 @@ export function BudgetExpensePlanForm({
     ? initialExpenseCategories.filter((c) => c.budgetCategory.id === filterBudgetCategoryId)
     : initialExpenseCategories
   ).filter((c) => {
+    if (filterSubcategoryName !== undefined) {
+      if (c.subcategory?.name !== filterSubcategoryName) return false;
+    }
     if (editingPlan && c.id === editingPlan.expenseCategoryId) return true;
     return !existingPlanCategoryIds.includes(c.id);
   });

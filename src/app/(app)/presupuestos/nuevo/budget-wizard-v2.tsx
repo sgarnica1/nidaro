@@ -10,7 +10,7 @@ import { format } from "date-fns";
 import { es } from "date-fns/locale";
 import { type DateRange } from "react-day-picker";
 import { cn } from "@/lib/utils";
-import { createBudget } from "@/lib/actions/budgets";
+import { createBudget, checkBudgetDateOverlap } from "@/lib/actions/budgets";
 import { updateCategoryPercentages } from "@/lib/actions/budget-structure";
 import type { SerializedIncomeSource } from "@/lib/actions/income";
 import type { BudgetTemplate } from "@/generated/prisma/client";
@@ -57,6 +57,8 @@ export function BudgetWizardV2({ incomeSources: initialSources, templates, categ
   const [showSuccess, setShowSuccess] = useState(false);
   const [createdBudgetName, setCreatedBudgetName] = useState("");
   const [createdBudgetAmount, setCreatedBudgetAmount] = useState(0);
+  const [dateError, setDateError] = useState<string | null>(null);
+  const [checkingDates, setCheckingDates] = useState(false);
 
   useEffect(() => {
     if (pathname !== "/presupuestos/nuevo") {
@@ -99,6 +101,7 @@ export function BudgetWizardV2({ incomeSources: initialSources, templates, categ
 
   function handleDateRangeSelect(range: DateRange | undefined) {
     setDateRange(range);
+    setDateError(null);
     if (range?.from && range?.to) {
       const startYear = range.from.getFullYear();
       const startMonth = String(range.from.getMonth() + 1).padStart(2, "0");
@@ -112,8 +115,19 @@ export function BudgetWizardV2({ incomeSources: initialSources, templates, categ
     }
   }
 
-  function handleNext() {
+  async function handleNext() {
     if (currentStep === 1 && canProceedStep1) {
+      setCheckingDates(true);
+      setDateError(null);
+      const { overlaps } = await checkBudgetDateOverlap(
+        form.getValues("startDate"),
+        form.getValues("endDate")
+      );
+      setCheckingDates(false);
+      if (overlaps) {
+        setDateError("Ya existe un presupuesto en ese rango de fechas. Elige fechas que no se traslapen.");
+        return;
+      }
       setCurrentStep(2);
     } else if (currentStep === 2 && canProceedStep2) {
       setCurrentStep(3);
@@ -211,14 +225,14 @@ export function BudgetWizardV2({ incomeSources: initialSources, templates, categ
             <button
               onClick={handleNext}
               disabled={
-                (currentStep === 1 && !canProceedStep1) ||
+                (currentStep === 1 && (!canProceedStep1 || checkingDates)) ||
                 (currentStep === 2 && !canProceedStep2) ||
                 (currentStep === 3 && !canProceedStep3) ||
                 currentStep === 4
               }
               className={cn(
                 "text-[15px] font-bold",
-                (currentStep === 1 && !canProceedStep1) || (currentStep === 2 && !canProceedStep2) || (currentStep === 3 && !canProceedStep3) || currentStep === 4
+                (currentStep === 1 && (!canProceedStep1 || checkingDates)) || (currentStep === 2 && !canProceedStep2) || (currentStep === 3 && !canProceedStep3) || currentStep === 4
                   ? "text-[#9CA3AF]"
                   : "text-[#1C3D2E]"
               )}
@@ -241,6 +255,7 @@ export function BudgetWizardV2({ incomeSources: initialSources, templates, categ
               templates={templates}
               dateRange={dateValue}
               onDateRangeClick={() => setDateRangePickerOpen(true)}
+              dateError={dateError}
             />
           )}
           {currentStep === 2 && (

@@ -7,7 +7,7 @@ import { DashboardPageClient } from "./dashboard-page-client";
 
 function budgetLabel(b: { name: string | null; startDate: Date }): string {
   if (b.name) return b.name;
-  const raw = new Intl.DateTimeFormat("es-MX", { month: "long", year: "numeric" }).format(new Date(b.startDate));
+  const raw = new Intl.DateTimeFormat("es-MX", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(b.startDate));
   return raw.charAt(0).toUpperCase() + raw.slice(1);
 }
 

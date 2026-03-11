@@ -6,7 +6,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 
 function budgetLabel(b: { name: string | null; startDate: Date }): string {
   if (b.name) return b.name;
-  const raw = new Intl.DateTimeFormat("es-MX", { month: "long", year: "numeric" }).format(new Date(b.startDate));
+  const raw = new Intl.DateTimeFormat("es-MX", { month: "long", year: "numeric", timeZone: "UTC" }).format(new Date(b.startDate));
   return raw.charAt(0).toUpperCase() + raw.slice(1);
 }
 
@@ -48,11 +48,22 @@ export default async function GastosPage({
 
   const expenses = await getExpensesByBudget(selectedBudget.id);
 
+  const budgetOptions = rawBudgets.map((b) => ({
+    id: b.id,
+    label: budgetLabel(b),
+    startDate: b.startDate,
+    endDate: b.endDate,
+  }));
+
   return (
     <GastosClient
       expenses={expenses}
       expenseCategories={expenseCategories}
       budgetId={selectedBudget.id}
+      budgetName={selectedBudget.name}
+      startDate={selectedBudget.startDate}
+      endDate={selectedBudget.endDate}
+      budgetOptions={budgetOptions}
     />
   );
 }
