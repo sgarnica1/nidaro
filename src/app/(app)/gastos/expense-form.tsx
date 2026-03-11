@@ -56,7 +56,26 @@ type Props = {
 };
 
 function todayString() {
-  return new Date().toISOString().split("T")[0];
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function formatDateForInput(date: Date | string): string {
+  if (typeof date === "string") {
+    return date;
+  }
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function parseDateString(dateString: string): Date {
+  const [year, month, day] = dateString.split("-").map(Number);
+  return new Date(year, month - 1, day);
 }
 
 function formatNumberWithCommas(value: string | number): string {
@@ -94,7 +113,7 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
       expenseCategoryId: expense?.expenseCategoryId ?? "",
       name: expense?.name ?? "",
       amount: expense ? Number(expense.amount) : 0,
-      date: expense ? new Date(expense.date).toISOString().split("T")[0] : todayString(),
+      date: expense ? formatDateForInput(expense.date) : todayString(),
     },
   });
 
@@ -196,7 +215,7 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
     }
   }
 
-  const dateValue = form.watch("date") ? new Date(form.watch("date") + "T00:00:00") : undefined;
+  const dateValue = form.watch("date") ? parseDateString(form.watch("date")) : undefined;
   const formattedDate = dateValue ? format(dateValue, "d MMM", { locale: es }) : "Selecciona fecha";
 
   return (
@@ -238,7 +257,7 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
                   transition={{ duration: 0.25 }}
                   className="flex-1 overflow-y-auto"
                 >
-                  <div className="px-6 pt-6 pb-8 lg:p-0 space-y-5">
+                  <div className="px-6 pt-0 pb-8 lg:p-0 space-y-5">
                     {/* Title Hierarchy */}
                     <div className="space-y-1">
                       <h2 className="text-xl font-semibold tracking-tight text-foreground">

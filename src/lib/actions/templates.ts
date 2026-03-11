@@ -177,7 +177,7 @@ export async function deleteTemplate(id: string): Promise<ActionResult> {
   }
 }
 
-export async function duplicateTemplate(id: string): Promise<ActionResult<TemplateWithItems>> {
+export async function duplicateTemplate(id: string, name?: string): Promise<ActionResult<TemplateWithItems>> {
   try {
     const user = await getCurrentUser();
     const originalTemplate = await prisma.budgetTemplate.findFirst({
@@ -194,7 +194,7 @@ export async function duplicateTemplate(id: string): Promise<ActionResult<Templa
     const newTemplate = await prisma.budgetTemplate.create({
       data: {
         userId: user.id,
-        name: `${originalTemplate.name} (Copia)`,
+        name: name || `${originalTemplate.name} (Copia)`,
       },
     });
 

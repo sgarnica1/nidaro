@@ -81,13 +81,6 @@ export function IncomeForm({ source, children, open: controlledOpen, onOpenChang
     if (result.success) {
       setOpen(false);
       form.reset();
-      toast.success("Ingreso guardado", {
-        duration: 2500,
-        style: {
-          backgroundColor: "#10B981",
-          color: "white",
-        },
-      });
     }
   }
 
@@ -156,8 +149,8 @@ export function IncomeForm({ source, children, open: controlledOpen, onOpenChang
                             amountError
                               ? "bg-[#DC2626] scale-x-100"
                               : amount > 0 || amountFocused
-                              ? "bg-[#1C3D2E] scale-x-100"
-                              : "bg-[#1C3D2E] scale-x-0"
+                                ? "bg-[#1C3D2E] scale-x-100"
+                                : "bg-[#1C3D2E] scale-x-0"
                           )}
                         />
                       </div>

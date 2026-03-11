@@ -1,22 +1,16 @@
 "use client";
 
-import { useTransition, useState, useMemo, useEffect } from "react";
+import { useTransition, useState, useMemo, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, Trash2, ChevronDown, Pencil } from "lucide-react";
+import { Plus, Trash2, ChevronDown, Pencil, MoreVertical, Copy, FileEdit, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { deleteTemplate, deleteTemplateItem, type TemplateWithItems } from "@/lib/actions/templates";
-import type { ExpenseCategoryWithRelations, BudgetCategoryWithSubs } from "@/lib/actions/expense-categories";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { toast } from "sonner";
+import { ResponsiveSheet } from "@/components/ui/responsive-sheet";
+import { deleteTemplate, deleteTemplateItem, duplicateTemplate, updateTemplate, type TemplateWithItems } from "@/lib/actions/templates";
+import type { ExpenseCategoryWithRelations, BudgetCategoryWithSubs } from "@/lib/actions/expense-categories";
 import { TemplateItemForm } from "./template-item-form";
 import { cn } from "@/lib/utils";
 
@@ -67,11 +61,16 @@ export function TemplateCard({
 }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [actionsSheetOpen, setActionsSheetOpen] = useState(false);
+  const [duplicateSheetOpen, setDuplicateSheetOpen] = useState(false);
+  const [renameSheetOpen, setRenameSheetOpen] = useState(false);
+  const [deleteSheetOpen, setDeleteSheetOpen] = useState(false);
+  const [duplicateName, setDuplicateName] = useState("");
+  const [renameValue, setRenameValue] = useState("");
   const [editingItem, setEditingItem] = useState<{ id: string; expenseCategoryId: string; plannedAmount: number } | null>(null);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
   const [swipedItemId, setSwipedItemId] = useState<string | null>(null);
-  const [confirmDeleteText, setConfirmDeleteText] = useState("");
+  const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (swipedItemId) {
@@ -106,16 +105,74 @@ export function TemplateCard({
     return pcts;
   }, [categoryTotals, totalPlanned]);
 
-  function handleDeleteTemplate() {
-    if (confirmDeleteText !== template.name) {
+  function handleDuplicate() {
+    setActionsSheetOpen(false);
+    setDuplicateName(`${template.name} (Copia)`);
+    setDuplicateSheetOpen(true);
+  }
+
+  function handleRename() {
+    setActionsSheetOpen(false);
+    setRenameValue(template.name);
+    setRenameSheetOpen(true);
+  }
+
+  function handleDelete() {
+    setActionsSheetOpen(false);
+    setDeleteSheetOpen(true);
+  }
+
+  function handleConfirmDuplicate() {
+    if (!duplicateName.trim()) {
+      toast.error("El nombre no puede estar vacío");
       return;
     }
-    setDeleteOpen(false);
-    setConfirmDeleteText("");
+    setDuplicateSheetOpen(false);
+    startTransition(async () => {
+      const result = await duplicateTemplate(template.id, duplicateName.trim());
+      if (result.success) {
+        setDuplicateName("");
+        router.refresh();
+        setTimeout(() => {
+          if (cardRef.current) {
+            cardRef.current.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 100);
+      } else {
+        toast.error(result.error || "Error al duplicar la plantilla");
+      }
+    });
+  }
+
+  function handleConfirmRename() {
+    if (!renameValue.trim()) {
+      toast.error("El nombre no puede estar vacío");
+      return;
+    }
+    if (renameValue.trim() === template.name) {
+      setRenameSheetOpen(false);
+      return;
+    }
+    setRenameSheetOpen(false);
+    startTransition(async () => {
+      const result = await updateTemplate(template.id, renameValue.trim());
+      if (result.success) {
+        setRenameValue("");
+        router.refresh();
+      } else {
+        toast.error(result.error || "Error al renombrar la plantilla");
+      }
+    });
+  }
+
+  function handleConfirmDelete() {
+    setDeleteSheetOpen(false);
     startTransition(async () => {
       const result = await deleteTemplate(template.id);
       if (result.success) {
         router.refresh();
+      } else {
+        toast.error(result.error || "Error al eliminar la plantilla");
       }
     });
   }
@@ -165,7 +222,14 @@ export function TemplateCard({
   const existingCategoryIds = template.items.map((i) => i.expenseCategory.id);
 
   return (
-    <div className="pb-6">
+    <motion.div
+      ref={cardRef}
+      initial={{ opacity: 0, scale: 0.96 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.96 }}
+      transition={{ duration: 0.18 }}
+      className="pb-6"
+    >
       {/* Budget Overview Card */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -173,9 +237,19 @@ export function TemplateCard({
         transition={{ duration: 0.3 }}
         className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.04)] p-6 mb-6"
       >
-        <div className="mb-5">
-          <h2 className="text-[20px] font-bold text-[#111111] mb-1">{template.name}</h2>
-          <p className="text-[14px] text-[#6B7280]">Total asignado</p>
+        <div className="mb-5 flex items-start justify-between">
+          <div className="flex-1 min-w-0">
+            <h2 className="text-[20px] font-bold text-[#111111] mb-1">{template.name}</h2>
+            <p className="text-[14px] text-[#6B7280]">Total asignado</p>
+          </div>
+          <motion.button
+            whileTap={{ scale: 0.95 }}
+            type="button"
+            onClick={() => setActionsSheetOpen(true)}
+            className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-[#F3F4F6] transition-colors shrink-0 ml-2"
+          >
+            <MoreVertical className="h-5 w-5 text-[#6B7280]" />
+          </motion.button>
         </div>
 
         <div className="mb-6">
@@ -495,73 +569,170 @@ export function TemplateCard({
         </TemplateItemForm>
       )}
 
-      {/* Delete Button */}
-      <div className="mt-6 mb-24">
-        <Dialog
-          open={deleteOpen}
-          onOpenChange={(open) => {
-            setDeleteOpen(open);
-            if (!open) {
-              setConfirmDeleteText("");
-            }
-          }}
-        >
-          <DialogTrigger asChild>
-            <Button
-              variant="ghost"
-              className="w-full h-11 text-[#DC2626] hover:text-[#DC2626] hover:bg-[#FEE2E2]"
+      {/* Actions Sheet */}
+      <ResponsiveSheet open={actionsSheetOpen} onOpenChange={setActionsSheetOpen} title={template.name}>
+        <div className="px-6 pb-6 space-y-2">
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            type="button"
+            onClick={handleDuplicate}
+            className="w-full flex items-center gap-3 px-4 py-4 rounded-xl hover:bg-[#F3F4F6] transition-colors text-left"
+          >
+            <Copy className="h-5 w-5 text-[#6B7280]" />
+            <span className="text-[15px] font-medium text-[#111111]">Duplicar plantilla</span>
+          </motion.button>
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            type="button"
+            onClick={handleRename}
+            className="w-full flex items-center gap-3 px-4 py-4 rounded-xl hover:bg-[#F3F4F6] transition-colors text-left"
+          >
+            <FileEdit className="h-5 w-5 text-[#6B7280]" />
+            <span className="text-[15px] font-medium text-[#111111]">Renombrar plantilla</span>
+          </motion.button>
+          <Separator className="my-2" />
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            type="button"
+            onClick={handleDelete}
+            className="w-full flex items-center gap-3 px-4 py-4 rounded-xl hover:bg-[#FEE2E2] transition-colors text-left"
+          >
+            <Trash2 className="h-5 w-5 text-[#DC2626]" />
+            <span className="text-[15px] font-medium text-[#DC2626]">Eliminar plantilla</span>
+          </motion.button>
+        </div>
+        <div className="px-6 pb-6">
+          <motion.button
+            whileTap={{ scale: 0.98 }}
+            type="button"
+            onClick={() => setActionsSheetOpen(false)}
+            className="w-full h-12 rounded-xl border border-[#E5E7EB] bg-white hover:bg-[#F9FAFB] transition-colors text-[15px] font-medium text-[#111111]"
+          >
+            Cancelar
+          </motion.button>
+        </div>
+      </ResponsiveSheet>
+
+      {/* Duplicate Sheet */}
+      <ResponsiveSheet open={duplicateSheetOpen} onOpenChange={setDuplicateSheetOpen} title="Duplicar plantilla">
+        <div className="px-6 pb-6 space-y-6">
+          <div className="space-y-2">
+            <label className="text-[14px] font-medium text-[#111111]">Nombre de la plantilla</label>
+            <Input
+              value={duplicateName}
+              onChange={(e) => setDuplicateName(e.target.value)}
+              placeholder="Nombre de la plantilla"
+              className="h-12 text-[15px]"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleConfirmDuplicate();
+                }
+              }}
+            />
+          </div>
+          <div className="flex gap-3">
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              type="button"
+              onClick={() => setDuplicateSheetOpen(false)}
+              className="flex-1 h-12 rounded-xl border border-[#E5E7EB] bg-white hover:bg-[#F9FAFB] transition-colors text-[15px] font-medium text-[#111111]"
             >
-              <Trash2 className="h-4 w-4 mr-2" />
-              Eliminar plantilla
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="rounded-2xl max-w-[90vw] sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle className="text-[22px] font-semibold text-[#111111]">
-                Eliminar plantilla
-              </DialogTitle>
-              <DialogDescription className="text-[15px] text-[#6B7280] mt-2">
-                Esta acción no se puede deshacer. Para confirmar, escribe el nombre de la plantilla:
-              </DialogDescription>
-            </DialogHeader>
-            <div className="mt-4 space-y-4">
-              <div className="p-3 bg-[#FEF3C7] border border-[#FCD34D] rounded-xl">
-                <p className="text-[14px] font-medium text-[#92400E]">
-                  &quot;{template.name}&quot;
-                </p>
-              </div>
-              <Input
-                type="text"
-                placeholder="Escribe el nombre de la plantilla"
-                value={confirmDeleteText}
-                onChange={(e) => setConfirmDeleteText(e.target.value)}
-                className="h-12 text-[15px]"
-                autoFocus
-              />
+              Cancelar
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              type="button"
+              onClick={handleConfirmDuplicate}
+              disabled={pending || !duplicateName.trim()}
+              className="flex-1 h-12 rounded-xl bg-[#1C3D2E] hover:bg-[#1C3D2E]/90 text-white transition-colors text-[15px] font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {pending && <Loader2 className="h-4 w-4 animate-spin" />}
+              Crear duplicado
+            </motion.button>
+          </div>
+        </div>
+      </ResponsiveSheet>
+
+      {/* Rename Sheet */}
+      <ResponsiveSheet open={renameSheetOpen} onOpenChange={setRenameSheetOpen} title="Renombrar plantilla">
+        <div className="px-6 pb-6 space-y-6">
+          <div className="space-y-2">
+            <label className="text-[14px] font-medium text-[#111111]">Nombre de la plantilla</label>
+            <Input
+              value={renameValue}
+              onChange={(e) => setRenameValue(e.target.value)}
+              placeholder="Nombre de la plantilla"
+              className="h-12 text-[15px]"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  handleConfirmRename();
+                }
+              }}
+            />
+          </div>
+          <div className="flex gap-3">
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              type="button"
+              onClick={() => setRenameSheetOpen(false)}
+              className="flex-1 h-12 rounded-xl border border-[#E5E7EB] bg-white hover:bg-[#F9FAFB] transition-colors text-[15px] font-medium text-[#111111]"
+            >
+              Cancelar
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              type="button"
+              onClick={handleConfirmRename}
+              disabled={pending || !renameValue.trim()}
+              className="flex-1 h-12 rounded-xl bg-[#1C3D2E] hover:bg-[#1C3D2E]/90 text-white transition-colors text-[15px] font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {pending && <Loader2 className="h-4 w-4 animate-spin" />}
+              Guardar
+            </motion.button>
+          </div>
+        </div>
+      </ResponsiveSheet>
+
+      {/* Delete Sheet */}
+      <ResponsiveSheet open={deleteSheetOpen} onOpenChange={setDeleteSheetOpen} title="Eliminar plantilla">
+        <div className="px-6 pb-6 space-y-6">
+          <div className="space-y-3">
+            <p className="text-[15px] text-[#111111]">
+              ¿Estás seguro de que quieres eliminar esta plantilla?
+            </p>
+            <div className="p-4 bg-[#FEF3C7] border border-[#FCD34D] rounded-xl">
+              <p className="text-[14px] font-medium text-[#92400E]">
+                &quot;{template.name}&quot;
+              </p>
             </div>
-            <DialogFooter className="gap-2 mt-6">
-              <Button
-                variant="outline"
-                className="h-12 text-base flex-1 rounded-xl"
-                onClick={() => {
-                  setDeleteOpen(false);
-                  setConfirmDeleteText("");
-                }}
-              >
-                Cancelar
-              </Button>
-              <Button
-                variant="destructive"
-                disabled={pending || confirmDeleteText !== template.name}
-                className="h-12 text-base flex-1 rounded-xl bg-[#DC2626] hover:bg-[#DC2626]/90 disabled:opacity-50"
-                onClick={handleDeleteTemplate}
-              >
-                Eliminar
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+            <p className="text-[13px] text-[#DC2626] font-medium">
+              Esta acción no se puede deshacer.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              type="button"
+              onClick={() => setDeleteSheetOpen(false)}
+              className="flex-1 h-12 rounded-xl border border-[#E5E7EB] bg-white hover:bg-[#F9FAFB] transition-colors text-[15px] font-medium text-[#111111]"
+            >
+              Cancelar
+            </motion.button>
+            <motion.button
+              whileTap={{ scale: 0.98 }}
+              type="button"
+              onClick={handleConfirmDelete}
+              disabled={pending}
+              className="flex-1 h-12 rounded-xl bg-[#DC2626] hover:bg-[#DC2626]/90 text-white transition-colors text-[15px] font-medium disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {pending && <Loader2 className="h-4 w-4 animate-spin" />}
+              Eliminar plantilla
+            </motion.button>
+          </div>
+        </div>
+      </ResponsiveSheet>
 
       {/* Bottom Summary Bar */}
       <motion.div
@@ -594,6 +765,6 @@ export function TemplateCard({
           </Button>
         </div>
       </motion.div>
-    </div>
+    </motion.div>
   );
 }

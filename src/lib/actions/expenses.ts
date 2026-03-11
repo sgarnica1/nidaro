@@ -25,11 +25,11 @@ export type ExpenseWithCategory = Omit<Expense, "amount"> & {
 
 export async function getExpensesByBudget(budgetId: string): Promise<ExpenseWithCategory[]> {
   const user = await getCurrentUser();
-  
+
   if (process.env.NODE_ENV === "production") {
     return getExpensesByBudgetCached(budgetId, user.id);
   }
-  
+
   return getExpensesByBudgetUncached(budgetId, user.id);
 }
 
@@ -77,7 +77,10 @@ export async function createExpense(
         expenseCategoryId: parsed.expenseCategoryId,
         name: parsed.name || "Sin descripción",
         amount: parsed.amount,
-        date: new Date(parsed.date),
+        date: (() => {
+          const [year, month, day] = parsed.date.split("-").map(Number);
+          return new Date(year, month - 1, day);
+        })(),
       },
     });
     revalidatePath("/dashboard");
@@ -101,7 +104,10 @@ export async function updateExpense(
         expenseCategoryId: parsed.expenseCategoryId,
         name: parsed.name || "Sin descripción",
         amount: parsed.amount,
-        date: new Date(parsed.date),
+        date: (() => {
+          const [year, month, day] = parsed.date.split("-").map(Number);
+          return new Date(year, month - 1, day);
+        })(),
       },
     });
     revalidatePath("/dashboard");
