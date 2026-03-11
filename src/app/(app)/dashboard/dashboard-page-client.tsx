@@ -3,11 +3,9 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { DashboardHeader } from "./dashboard-header";
-import { HeroSummaryCard } from "./hero-summary-card";
-import { BudgetHealthSummary } from "./budget-health-summary";
+import { MonthlySpendingCard } from "./monthly-spending-card";
 import { UnifiedCategoryCard } from "./unified-category-card";
 import { RecentExpensesPreview } from "./recent-expenses-preview";
-import { MonthlyExpensesSheet } from "@/app/(app)/gastos/monthly-expenses-sheet";
 import { ExpenseCategoryDetailSheet } from "./expense-category-detail-sheet";
 import { NewBudgetFAB } from "./new-budget-fab";
 import type { ExpenseWithCategory } from "@/lib/actions/expenses";
@@ -74,7 +72,6 @@ export function DashboardPageClient({
   const router = useRouter();
   const initialIndex = budgetOptions.findIndex((b) => b.id === budgetId);
   const [currentBudgetIndex, setCurrentBudgetIndex] = useState(initialIndex >= 0 ? initialIndex : 0);
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null);
   const [isCategoryDetailSheetOpen, setIsCategoryDetailSheetOpen] = useState(false);
 
@@ -124,21 +121,41 @@ export function DashboardPageClient({
   }));
 
   const CATEGORY_COLORS: Record<string, string> = {
-    Necesidades: "#1C3D2E",
-    Gustos: "#52796F",
-    Ahorro: "#84A98C",
+    Necesidades: "#3B82F6",
+    Gustos: "#F59E0B",
+    Ahorro: "#22C55E",
   };
 
   const selectedCategory = useMemo(() => {
     if (!selectedCategoryId) return null;
-    const plan = expensePlans.find((p) => p.expenseCategory.budgetCategory.id === selectedCategoryId);
-    if (!plan) return null;
+    
+    // Build a map of category IDs to names from all available sources
+    const catNameMap: Record<string, string> = {};
+    
+    // From expense plans
+    for (const plan of expensePlans) {
+      catNameMap[plan.expenseCategory.budgetCategory.id] = plan.expenseCategory.budgetCategory.name;
+    }
+    
+    // From expenses
+    for (const exp of expenses) {
+      catNameMap[exp.expenseCategory.budgetCategory.id] = exp.expenseCategory.budgetCategory.name;
+    }
+    
+    // From expense categories (this covers cases like "Ahorro" with no plans/expenses)
+    for (const expCat of expenseCategories) {
+      catNameMap[expCat.budgetCategory.id] = expCat.budgetCategory.name;
+    }
+    
+    const categoryName = catNameMap[selectedCategoryId];
+    if (!categoryName) return null;
+    
     return {
       id: selectedCategoryId,
-      name: plan.expenseCategory.budgetCategory.name,
-      color: CATEGORY_COLORS[plan.expenseCategory.budgetCategory.name] || "#1C3D2E",
+      name: categoryName,
+      color: CATEGORY_COLORS[categoryName] || "#1C3D2E",
     };
-  }, [selectedCategoryId, expensePlans]);
+  }, [selectedCategoryId, expensePlans, expenses, expenseCategories]);
 
   function handleCategoryClick(categoryId: string) {
     setSelectedCategoryId(categoryId);
@@ -157,9 +174,12 @@ export function DashboardPageClient({
         canGoNext={canGoNext}
       />
 
-      <HeroSummaryCard available={available} totalPlanned={totalPlanned} totalReal={totalReal} remaining={remaining} />
-
-      <BudgetHealthSummary totalReal={totalReal} totalPlanned={totalPlanned} available={available} />
+      <MonthlySpendingCard
+        totalSpent={totalReal}
+        totalPlanned={totalPlanned}
+        remaining={remaining}
+        totalIncome={totalIncome}
+      />
 
       <UnifiedCategoryCard
         expensePlans={expensePlans}
@@ -175,28 +195,18 @@ export function DashboardPageClient({
             },
             subcategory: e.expenseCategory.subcategory
               ? {
-                id: e.expenseCategory.subcategory.id,
-                name: e.expenseCategory.subcategory.name,
-              }
+                  id: e.expenseCategory.subcategory.id,
+                  name: e.expenseCategory.subcategory.name,
+                }
               : null,
           },
         }))}
         totalIncome={totalIncome}
         categoryPercentages={categoryPercentages}
         onCategoryClick={handleCategoryClick}
-        onRowClick={() => setIsSheetOpen(true)}
       />
 
       <RecentExpensesPreview expenses={expenses} />
-
-      <MonthlyExpensesSheet
-        open={isSheetOpen}
-        onOpenChange={setIsSheetOpen}
-        expenses={expenses}
-        expenseCategories={expenseCategories}
-        budgetId={budgetId}
-        totalIncome={totalIncome}
-      />
 
       {selectedCategory && (
         <ExpenseCategoryDetailSheet

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -73,9 +74,9 @@ function formatCurrency(amount: number) {
 }
 
 const CATEGORY_COLORS: Record<string, string> = {
-  Necesidades: "#1C3D2E",
-  Gustos: "#52796F",
-  Ahorro: "#84A98C",
+  Necesidades: "#3B82F6", // blue
+  Gustos: "#F59E0B", // orange
+  Ahorro: "#22C55E", // green
 };
 
 export function UnifiedCategoryCard({ expensePlans, expenses, totalIncome, categoryPercentages, onCategoryClick, onRowClick }: Props) {
@@ -172,17 +173,15 @@ export function UnifiedCategoryCard({ expensePlans, expenses, totalIncome, categ
       <div className="space-y-0">
         {categories.map((category, index) => {
           const usagePct = category.assignedAmount > 0 ? (category.realAmount / category.assignedAmount) * 100 : 0;
-          const progressColor =
-            usagePct < 70 ? "#22C55E" : usagePct < 90 ? "#F59E0B" : "#DC2626";
           const hasExpenseCategories = category.expenseCategories.length > 0;
 
           return (
             <div key={category.categoryId}>
               {index > 0 && <div className="h-px bg-[#F3F4F6]" />}
-              <button
+              <motion.button
                 type="button"
                 onClick={() => {
-                  if (hasExpenseCategories && onCategoryClick) {
+                  if (onCategoryClick) {
                     onCategoryClick(category.categoryId);
                   } else if (onRowClick) {
                     onRowClick();
@@ -190,8 +189,9 @@ export function UnifiedCategoryCard({ expensePlans, expenses, totalIncome, categ
                 }}
                 className={cn(
                   "w-full flex items-center gap-4 h-[52px] px-0 cursor-pointer",
-                  (onRowClick || hasExpenseCategories) && "hover:opacity-80 transition-opacity"
+                  (onCategoryClick || onRowClick) && "hover:opacity-80 transition-opacity"
                 )}
+                whileTap={{ scale: 0.98 }}
               >
                 {/* Left: Colored square + name + badge */}
                 <div className="flex items-center gap-3 shrink-0">
@@ -216,12 +216,14 @@ export function UnifiedCategoryCard({ expensePlans, expenses, totalIncome, categ
                 {/* Center: Progress bar */}
                 <div className="flex-1 min-w-0">
                   <div className="h-1.5 bg-[#F3F4F6] rounded-full overflow-hidden">
-                    <div
-                      className="h-full rounded-full transition-all"
+                    <motion.div
+                      className="h-full rounded-full"
                       style={{
-                        width: `${Math.min(usagePct, 100)}%`,
-                        backgroundColor: progressColor,
+                        backgroundColor: category.color,
                       }}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.min(usagePct, 100)}%` }}
+                      transition={{ duration: 0.8, delay: 0.2 + index * 0.1, ease: "easeOut" }}
                     />
                   </div>
                 </div>
@@ -235,7 +237,7 @@ export function UnifiedCategoryCard({ expensePlans, expenses, totalIncome, categ
                     de {formatCurrency(category.assignedAmount)}
                   </p>
                 </div>
-              </button>
+              </motion.button>
             </div>
           );
         })}
