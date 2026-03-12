@@ -1,11 +1,11 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { ChevronRight, Pencil, Trash2, Receipt } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronRight, Receipt } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { EmptyState } from "@/components/ui/empty-state";
 import {
   Dialog,
   DialogContent,
@@ -23,7 +23,6 @@ type Props = {
   expenses: ExpenseWithCategory[];
   expenseCategories: ExpenseCategoryWithRelations[];
   budgetId: string;
-  onAddExpense?: () => void;
 };
 
 type MonthGroup = {
@@ -97,7 +96,7 @@ function groupByMonth(expenses: ExpenseWithCategory[]): MonthGroup[] {
   return Array.from(map.values()).sort((a, b) => b.key.localeCompare(a.key));
 }
 
-export function ExpenseList({ expenses, expenseCategories, budgetId, onAddExpense }: Props) {
+export function ExpenseList({ expenses, expenseCategories, budgetId }: Props) {
   const [pending, startTransition] = useTransition();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingExpense, setEditingExpense] = useState<ExpenseWithCategory | null>(null);
@@ -136,7 +135,12 @@ export function ExpenseList({ expenses, expenseCategories, budgetId, onAddExpens
     <>
       <div className="space-y-6 pb-6">
         {groups.map((group, groupIndex) => (
-          <div key={group.key}>
+          <motion.div
+            key={group.key}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: groupIndex * 0.1 }}
+          >
             {showMonthHeaders && (
               <>
                 <div className="flex items-center justify-between mb-4">
@@ -151,58 +155,66 @@ export function ExpenseList({ expenses, expenseCategories, budgetId, onAddExpens
               </>
             )}
             <div className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.04)] overflow-hidden">
-              {group.expenses.map((expense) => {
-                const category = expenseCategories.find((c) => c.id === expense.expenseCategoryId);
-                if (!category) return null;
+              <AnimatePresence>
+                {group.expenses.map((expense, expenseIndex) => {
+                  const category = expenseCategories.find((c) => c.id === expense.expenseCategoryId);
+                  if (!category) return null;
 
-                return (
-                  <button
-                    key={expense.id}
-                    type="button"
-                    onClick={() => handleRowPress(expense)}
-                    className={cn(
-                      "w-full flex items-center gap-4 min-h-[64px] py-3 px-5 transition-colors cursor-pointer",
-                      pressedRow === expense.id ? "bg-[#F3F4F6]" : "bg-white hover:bg-[#F3F4F6]"
-                    )}
-                  >
-                    <div
-                      className="h-10 w-10 rounded-lg flex items-center justify-center shrink-0 text-lg"
-                      style={{
-                        backgroundColor: `${category.color}1F`,
-                      }}
+                  return (
+                    <motion.button
+                      key={expense.id}
+                      type="button"
+                      onClick={() => handleRowPress(expense)}
+                      className={cn(
+                        "w-full flex items-center gap-4 min-h-[64px] py-3 px-5 transition-colors cursor-pointer",
+                        pressedRow === expense.id ? "bg-[#F3F4F6]" : "bg-white hover:bg-[#F3F4F6]"
+                      )}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: 10 }}
+                      transition={{ duration: 0.2, delay: expenseIndex * 0.03 }}
+                      whileHover={{ scale: 1.01 }}
+                      whileTap={{ scale: 0.99 }}
                     >
-                      {getCategoryIcon(category)}
-                    </div>
-                    <div className="flex-1 min-w-0 text-left overflow-hidden pr-2">
-                      <p className="text-[15px] font-medium text-[#111111] mb-1.5 truncate">
-                        {expense.name}
-                      </p>
-                      <div className="flex items-center gap-2 min-w-0">
-                        <p className="text-[12px] text-muted-foreground shrink-0">
-                          {formatDate(expense.date)}
-                        </p>
-                        <Badge
-                          className="text-[11px] px-2 py-0.5 rounded-full border-0 max-w-[120px] truncate"
-                          style={{
-                            backgroundColor: `${category.color}1A`,
-                            color: darkenHex(category.color),
-                          }}
-                        >
-                          <span className="truncate block">{category.name}</span>
-                        </Badge>
+                      <div
+                        className="h-10 w-10 rounded-lg flex items-center justify-center shrink-0 text-lg"
+                        style={{
+                          backgroundColor: `${category.color}1F`,
+                        }}
+                      >
+                        {getCategoryIcon(category)}
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <p className="text-[16px] font-bold text-[#111111] tabular-nums whitespace-nowrap">
-                        {formatCurrency(expense.amount)}
-                      </p>
-                      <ChevronRight className="h-5 w-5 text-[#6B7280] shrink-0" />
-                    </div>
-                  </button>
-                );
-              })}
+                      <div className="flex-1 min-w-0 text-left overflow-hidden pr-2">
+                        <p className="text-[15px] font-medium text-[#111111] mb-1.5 truncate">
+                          {expense.name}
+                        </p>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <p className="text-[12px] text-muted-foreground shrink-0">
+                            {formatDate(expense.date)}
+                          </p>
+                          <Badge
+                            className="text-[11px] px-2 py-0.5 rounded-full border-0 max-w-[120px] truncate"
+                            style={{
+                              backgroundColor: `${category.color}1A`,
+                              color: darkenHex(category.color),
+                            }}
+                          >
+                            <span className="truncate block">{category.name}</span>
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <p className="text-[16px] font-bold text-[#111111] tabular-nums whitespace-nowrap">
+                          {formatCurrency(expense.amount)}
+                        </p>
+                        <ChevronRight className="h-5 w-5 text-[#6B7280] shrink-0" />
+                      </div>
+                    </motion.button>
+                  );
+                })}
+              </AnimatePresence>
             </div>
-          </div>
+          </motion.div>
         ))}
       </div>
 

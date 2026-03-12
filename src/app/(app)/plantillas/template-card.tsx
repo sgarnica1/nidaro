@@ -392,7 +392,7 @@ export function TemplateCard({
                               transition={{ duration: 0.3, ease: "easeInOut" }}
                               className="overflow-hidden"
                             >
-                              <div className="px-5 pb-5 pt-2">
+                              <div className="px-2 pb-5 pt-2">
                                 {subcat.items.length === 0 ? (
                                   <div className="py-8 text-center">
                                     <p className="text-[14px] text-[#6B7280] mb-4">No hay gastos en esta subcategoría</p>
@@ -624,7 +624,7 @@ export function TemplateCard({
                       transition={{ duration: 0.3, ease: "easeInOut" }}
                       className="overflow-hidden"
                     >
-                      <div className="px-5 pb-5 pt-2">
+                      <div className="px-2 pb-5 pt-2">
                         {allItems.length === 0 ? (
                           <div className="py-8 text-center">
                             <p className="text-[14px] text-[#6B7280] mb-4">No hay gastos en esta categoría</p>

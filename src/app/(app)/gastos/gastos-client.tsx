@@ -178,15 +178,26 @@ export function GastosClient({
           <p className="text-[12px] text-[#6B7280]"><span className="font-bold">{monthLabel}</span> - {dateRange}</p>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.04)] p-5 mb-6">
-          <p className="text-[28px] font-bold text-[#111111] tracking-tight mb-1">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.04)] p-5 mb-6"
+        >
+          <motion.p
+            key={currentMonthTotal}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3 }}
+            className="text-[28px] font-bold text-[#111111] tracking-tight mb-1"
+          >
             {formatCurrency(currentMonthTotal)}
-          </p>
+          </motion.p>
           <p className="text-[13px] text-[#6B7280]">
             {currentMonthCount} {currentMonthCount === 1 ? "gasto" : "gastos"}{" "}
             {selectedMonthLabel ? `en ${selectedMonthLabel}` : "en total"}
           </p>
-        </div>
+        </motion.div>
 
         {availableMonths.length > 1 && (
           <div className="mb-6 -mx-5 px-5">
@@ -194,6 +205,7 @@ export function GastosClient({
               <motion.button
                 type="button"
                 onClick={() => setSelectedMonth(null)}
+                whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 className={cn(
                   "px-4 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-all",
@@ -209,7 +221,11 @@ export function GastosClient({
                   key={month.key}
                   type="button"
                   onClick={() => setSelectedMonth(month.key)}
+                  whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.2 }}
                   className={cn(
                     "px-4 py-2 rounded-full text-[13px] font-medium whitespace-nowrap transition-all capitalize",
                     selectedMonth === month.key

@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { DashboardHeader } from "./dashboard-header";
 import { MonthlySpendingCard } from "./monthly-spending-card";
 import { UnifiedCategoryCard } from "./unified-category-card";
@@ -164,15 +165,21 @@ export function DashboardPageClient({
 
   return (
     <div className="space-y-4 overflow-x-hidden">
-      <DashboardHeader
-        monthLabel={monthLabel}
-        dateRange={dateRange}
-        budgetId={budgetId}
-        onPrevious={handlePrevious}
-        onNext={handleNext}
-        canGoPrevious={canGoPrevious}
-        canGoNext={canGoNext}
-      />
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <DashboardHeader
+          monthLabel={monthLabel}
+          dateRange={dateRange}
+          budgetId={budgetId}
+          onPrevious={handlePrevious}
+          onNext={handleNext}
+          canGoPrevious={canGoPrevious}
+          canGoNext={canGoNext}
+        />
+      </motion.div>
 
       <MonthlySpendingCard
         totalSpent={totalReal}
@@ -181,7 +188,12 @@ export function DashboardPageClient({
         totalIncome={totalIncome}
       />
 
-      <UnifiedCategoryCard
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.1 }}
+      >
+        <UnifiedCategoryCard
         expensePlans={expensePlans}
         expenses={expenses.map((e) => ({
           amount: e.amount,
@@ -205,8 +217,15 @@ export function DashboardPageClient({
         categoryPercentages={categoryPercentages}
         onCategoryClick={handleCategoryClick}
       />
+      </motion.div>
 
-      <RecentExpensesPreview expenses={expenses} />
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.2 }}
+      >
+        <RecentExpensesPreview expenses={expenses} />
+      </motion.div>
 
       {selectedCategory && (
         <ExpenseCategoryDetailSheet

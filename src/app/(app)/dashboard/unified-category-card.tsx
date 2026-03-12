@@ -167,7 +167,12 @@ export function UnifiedCategoryCard({ expensePlans, expenses, totalIncome, categ
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.04)] p-5">
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="bg-white rounded-2xl shadow-[0_1px_3px_rgba(0,0,0,0.06),0_4px_12px_rgba(0,0,0,0.04)] p-5"
+    >
       <p className="text-[13px] font-semibold text-[#6B7280] uppercase tracking-wider mb-4">Por categoría</p>
       
       <div className="space-y-0">
@@ -188,10 +193,14 @@ export function UnifiedCategoryCard({ expensePlans, expenses, totalIncome, categ
                   }
                 }}
                 className={cn(
-                  "w-full flex items-center gap-4 h-[52px] px-0 cursor-pointer",
-                  (onCategoryClick || onRowClick) && "hover:opacity-80 transition-opacity"
+                  "w-full flex items-center gap-4 h-[52px] px-0 cursor-pointer transition-all",
+                  (onCategoryClick || onRowClick) && "hover:opacity-80"
                 )}
+                whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.98 }}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
               >
                 {/* Left: Colored square + name + badge */}
                 <div className="flex items-center gap-3 shrink-0">
@@ -242,6 +251,6 @@ export function UnifiedCategoryCard({ expensePlans, expenses, totalIncome, categ
           );
         })}
       </div>
-    </div>
+    </motion.div>
   );
 }
