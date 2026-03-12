@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { ResponsiveSheet } from "@/components/ui/responsive-sheet";
 import { CategoryForm } from "@/app/(app)/categorias/category-form";
+import { CategoryPickerSheet } from "@/app/(app)/gastos/category-picker-sheet";
 import { cn } from "@/lib/utils";
 import { upsertBudgetExpensePlan } from "@/lib/actions/budgets";
 import type {
@@ -81,6 +82,8 @@ export function BudgetExpensePlanForm({
     }
   };
   const [newCategoryOpen, setNewCategoryOpen] = useState(false);
+  const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
+  const [categoryError, setCategoryError] = useState(false);
   const [amountFocused, setAmountFocused] = useState(false);
   const amountInputRef = useRef<HTMLInputElement>(null);
 
@@ -88,9 +91,18 @@ export function BudgetExpensePlanForm({
     ? initialExpenseCategories.filter((c) => c.budgetCategory.id === filterBudgetCategoryId)
     : initialExpenseCategories
   ).filter((c) => {
+    // Filter by subcategory
     if (filterSubcategoryName !== undefined) {
-      if (c.subcategory?.name !== filterSubcategoryName) return false;
+      if (filterSubcategoryName === "") {
+        // Empty string means "no subcategory" - show only categories without subcategory
+        if (c.subcategory) return false;
+      } else {
+        // Non-empty string means match by subcategory name
+        if (c.subcategory?.name !== filterSubcategoryName) return false;
+      }
     }
+    // If filterSubcategoryName is undefined, don't filter by subcategory (show all)
+    // If editing, include the current category; otherwise exclude existing ones
     if (editingPlan && c.id === editingPlan.expenseCategoryId) return true;
     return !existingPlanCategoryIds.includes(c.id);
   });
@@ -106,6 +118,10 @@ export function BudgetExpensePlanForm({
   const amount = useWatch({ control: form.control, name: "plannedAmount" });
   const selectedCategoryId = useWatch({ control: form.control, name: "expenseCategoryId" });
   const [amountInputValue, setAmountInputValue] = useState<string>("");
+
+  const sortedCategories = useMemo(() => {
+    return [...filteredCategories].sort((a, b) => a.name.localeCompare(b.name));
+  }, [filteredCategories]);
 
   function formatNumberWithCommas(value: string): string {
     const numericValue = value.replace(/,/g, "");
@@ -163,6 +179,11 @@ export function BudgetExpensePlanForm({
   }
 
   async function onSubmit(values: FormValues) {
+    if (!values.expenseCategoryId) {
+      setCategoryError(true);
+      return;
+    }
+    setCategoryError(false);
     const result = await upsertBudgetExpensePlan({
       budgetId,
       expenseCategoryId: values.expenseCategoryId,
@@ -326,58 +347,36 @@ export function BudgetExpensePlanForm({
 
               <div className="h-px bg-[#F3F4F6]" />
 
-              <div className="px-4 py-5">
-                <p className="text-[12px] text-[#6B7280] font-medium mb-4">Selecciona una categoría</p>
-                <div
-                  className="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4"
-                  style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-                  onTouchStart={() => {
-                    amountInputRef.current?.blur();
-                  }}
-                >
-                  {filteredCategories.map((cat) => {
-                    const isSelected = selectedCategoryId === cat.id;
-                    return (
-                      <button
-                        key={cat.id}
-                        type="button"
-                        onClick={() => {
-                          form.setValue("expenseCategoryId", cat.id);
-                        }}
-                        className={cn(
-                          "h-9 px-[14px] rounded-[99px] flex items-center shrink-0 transition-all font-medium",
-                          isSelected
-                            ? "border border-current"
-                            : "bg-[#F3F4F6] text-[#6B7280] border border-transparent"
-                        )}
-                        style={
-                          isSelected
-                            ? {
-                              backgroundColor: `${cat.color}15`,
-                              color: cat.color,
-                              borderColor: cat.color,
-                            }
-                            : {}
-                        }
-                      >
-                        <span className="text-sm">{cat.name}</span>
-                      </button>
-                    );
-                  })}
-                  <button
-                    type="button"
-                    onClick={() => setNewCategoryOpen(true)}
-                    className="h-9 px-[14px] rounded-[99px] flex items-center shrink-0 border border-dashed border-[#D1D5DB] text-[#6B7280] bg-transparent hover:bg-[#F3F4F6] transition-colors"
-                  >
-                    <Plus className="h-4 w-4 mr-1" />
-                    <span className="text-sm">Nueva</span>
-                  </button>
-                </div>
+              {/* Category Selection */}
+              <div className="px-4 py-5 space-y-2">
+                <label className="text-sm font-medium text-foreground block">Categoría</label>
                 <FormField
                   control={form.control}
                   name="expenseCategoryId"
                   render={() => (
                     <FormItem>
+                      <FormControl>
+                        <motion.button
+                          type="button"
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => setCategoryPickerOpen(true)}
+                          className={cn(
+                            "w-full flex items-center justify-between px-4 py-3 rounded-xl border transition-colors text-left",
+                            selectedCategoryId
+                              ? "bg-primary/10 border-primary/20 text-primary"
+                              : categoryError
+                                ? "bg-destructive/10 border-destructive/20 text-destructive"
+                                : "bg-muted/60 border-border text-muted-foreground hover:bg-muted/80"
+                          )}
+                        >
+                          <span className="text-base font-medium">
+                            {selectedCategoryId
+                              ? sortedCategories.find((c) => c.id === selectedCategoryId)?.name || "Categoría seleccionada"
+                              : "Agregar categoría"}
+                          </span>
+                          <span className="text-sm">+</span>
+                        </motion.button>
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -409,6 +408,18 @@ export function BudgetExpensePlanForm({
           </form>
         </Form>
       </ResponsiveSheet>
+
+      {/* Category Picker Sheet */}
+      <CategoryPickerSheet
+        open={categoryPickerOpen}
+        onOpenChange={setCategoryPickerOpen}
+        categories={sortedCategories}
+        selectedCategoryId={selectedCategoryId}
+        onSelect={(id) => {
+          form.setValue("expenseCategoryId", id);
+          setCategoryError(false);
+        }}
+      />
 
       <CategoryForm
         budgetCategories={budgetCategories}
