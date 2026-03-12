@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion } from "framer-motion";
@@ -59,14 +59,8 @@ export function GastosClient({
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
 
-  const initialIndex = budgetOptions.findIndex((b) => b.id === budgetId);
-  const [currentBudgetIndex, setCurrentBudgetIndex] = useState(initialIndex >= 0 ? initialIndex : 0);
-
-  useEffect(() => {
-    const newIndex = budgetOptions.findIndex((b) => b.id === budgetId);
-    if (newIndex >= 0) {
-      setCurrentBudgetIndex(newIndex);
-    }
+  const currentBudgetIndex = useMemo(() => {
+    return budgetOptions.findIndex((b) => b.id === budgetId);
   }, [budgetId, budgetOptions]);
 
   const monthLabel = budgetName || formatMonthYear(new Date(startDate));
@@ -78,7 +72,6 @@ export function GastosClient({
   function handlePrevious() {
     if (canGoPrevious) {
       const newIndex = currentBudgetIndex - 1;
-      setCurrentBudgetIndex(newIndex);
       router.push(`/gastos?budgetId=${budgetOptions[newIndex].id}`);
     }
   }
@@ -86,7 +79,6 @@ export function GastosClient({
   function handleNext() {
     if (canGoNext) {
       const newIndex = currentBudgetIndex + 1;
-      setCurrentBudgetIndex(newIndex);
       router.push(`/gastos?budgetId=${budgetOptions[newIndex].id}`);
     }
   }
@@ -245,7 +237,6 @@ export function GastosClient({
         expenses={filteredExpenses}
         expenseCategories={expenseCategories}
         budgetId={budgetId}
-        onAddExpense={() => setIsFormOpen(true)}
       />
 
       <ExpenseForm
