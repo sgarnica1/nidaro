@@ -127,6 +127,14 @@ export function DashboardPageClient({
     Ahorro: "#22C55E",
   };
 
+  const totalPlannedFromExpensePlans = useMemo(
+    () => expensePlans.reduce((sum, p) => sum + p.plannedAmount, 0),
+    [expensePlans]
+  );
+
+  const monthlyPlannedTotal =
+    totalPlannedFromExpensePlans > 0 ? totalPlannedFromExpensePlans : totalPlanned;
+
   const selectedCategory = useMemo(() => {
     if (!selectedCategoryId) return null;
     
@@ -183,7 +191,7 @@ export function DashboardPageClient({
 
       <MonthlySpendingCard
         totalSpent={totalReal}
-        totalPlanned={totalPlanned}
+        totalPlanned={monthlyPlannedTotal}
         remaining={remaining}
         totalIncome={totalIncome}
       />
@@ -213,7 +221,6 @@ export function DashboardPageClient({
               : null,
           },
         }))}
-        totalIncome={totalIncome}
         categoryPercentages={categoryPercentages}
         onCategoryClick={handleCategoryClick}
       />
