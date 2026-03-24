@@ -42,7 +42,6 @@ type Expense = {
 type Props = {
   expensePlans: ExpensePlan[];
   expenses: Expense[];
-  totalIncome: number;
   categoryPercentages: Record<string, number>;
   onCategoryClick?: (categoryId: string) => void;
   onRowClick?: () => void;
@@ -52,7 +51,7 @@ type CategoryData = {
   categoryId: string;
   categoryName: string;
   assignedPct: number;
-  assignedAmount: number;
+  plannedTotal: number;
   realAmount: number;
   color: string;
   expenseCategories: Array<{
@@ -79,8 +78,14 @@ const CATEGORY_COLORS: Record<string, string> = {
   Ahorro: "#22C55E", // green
 };
 
-export function UnifiedCategoryCard({ expensePlans, expenses, totalIncome, categoryPercentages, onCategoryClick, onRowClick }: Props) {
+export function UnifiedCategoryCard({ expensePlans, expenses, categoryPercentages, onCategoryClick, onRowClick }: Props) {
   const categories = useMemo(() => {
+    const plannedByBudgetCategory: Record<string, number> = {};
+    for (const plan of expensePlans) {
+      const id = plan.expenseCategory.budgetCategory.id;
+      plannedByBudgetCategory[id] = (plannedByBudgetCategory[id] ?? 0) + plan.plannedAmount;
+    }
+
     const realByCategory: Record<string, number> = {};
     for (const exp of expenses) {
       const catId = exp.expenseCategory.budgetCategory.id;
@@ -136,14 +141,14 @@ export function UnifiedCategoryCard({ expensePlans, expenses, totalIncome, categ
 
     const categoryData: CategoryData[] = categoryIds.map((catId) => {
       const assignedPct = categoryPercentages[catId] ?? 0;
-      const assignedAmount = (totalIncome * assignedPct) / 100;
+      const plannedTotal = plannedByBudgetCategory[catId] ?? 0;
       const realAmount = realByCategory[catId] ?? 0;
       const categoryName = catNameMap[catId] ?? catId;
       return {
         categoryId: catId,
         categoryName,
         assignedPct,
-        assignedAmount,
+        plannedTotal,
         realAmount,
         color: CATEGORY_COLORS[categoryName] || "#1C3D2E",
         expenseCategories: expenseCategoriesByBudgetCategory[catId]?.sort((a, b) => 
@@ -160,7 +165,7 @@ export function UnifiedCategoryCard({ expensePlans, expenses, totalIncome, categ
       if (aOrder !== bOrder) return aOrder - bOrder;
       return a.categoryName.localeCompare(b.categoryName);
     });
-  }, [expensePlans, expenses, totalIncome, categoryPercentages]);
+  }, [expensePlans, expenses, categoryPercentages]);
 
   if (categories.length === 0) {
     return null;
@@ -177,7 +182,8 @@ export function UnifiedCategoryCard({ expensePlans, expenses, totalIncome, categ
       
       <div className="space-y-0">
         {categories.map((category, index) => {
-          const usagePct = category.assignedAmount > 0 ? (category.realAmount / category.assignedAmount) * 100 : 0;
+          const usagePct =
+            category.plannedTotal > 0 ? (category.realAmount / category.plannedTotal) * 100 : 0;
           const hasExpenseCategories = category.expenseCategories.length > 0;
 
           return (
@@ -243,7 +249,7 @@ export function UnifiedCategoryCard({ expensePlans, expenses, totalIncome, categ
                     {formatCurrency(category.realAmount)}
                   </p>
                   <p className="text-[11px] text-[#6B7280]">
-                    de {formatCurrency(category.assignedAmount)}
+                    de {formatCurrency(category.plannedTotal)}
                   </p>
                 </div>
               </motion.button>
