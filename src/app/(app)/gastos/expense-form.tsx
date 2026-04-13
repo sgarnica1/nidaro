@@ -63,19 +63,37 @@ function todayString() {
   return `${year}-${month}-${day}`;
 }
 
-function formatDateForInput(date: Date | string): string {
-  if (typeof date === "string") {
-    return date;
-  }
+function isValidDate(date: Date): boolean {
+  return !Number.isNaN(date.getTime());
+}
+
+function toInputDateString(date: Date): string {
   const year = date.getUTCFullYear();
   const month = String(date.getUTCMonth() + 1).padStart(2, "0");
   const day = String(date.getUTCDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
-function parseDateString(dateString: string): Date {
-  const [year, month, day] = dateString.split("-").map(Number);
-  return new Date(Date.UTC(year, month - 1, day));
+function formatDateForInput(date: Date | string): string {
+  if (typeof date === "string") {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return date;
+    }
+    const parsedDate = new Date(date);
+    return isValidDate(parsedDate) ? toInputDateString(parsedDate) : todayString();
+  }
+  return isValidDate(date) ? toInputDateString(date) : todayString();
+}
+
+function parseDateString(dateString: string): Date | undefined {
+  if (!dateString) return undefined;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    const [year, month, day] = dateString.split("-").map(Number);
+    const parsedDate = new Date(Date.UTC(year, month - 1, day));
+    return isValidDate(parsedDate) ? parsedDate : undefined;
+  }
+  const parsedDate = new Date(dateString);
+  return isValidDate(parsedDate) ? parsedDate : undefined;
 }
 
 function formatNumberWithCommas(value: string | number): string {
@@ -161,8 +179,6 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
   }, [open, expense]);
 
   async function onSubmit(values: FormValues) {
-    console.log("onSubmit called with values:", values);
-
     if (values.amount === 0 || values.amount <= 0) {
       setAmountError(true);
       amountInputRef.current?.focus();
@@ -177,12 +193,9 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
     }
 
     try {
-      console.log("Calling server action...");
       const result = expense
         ? await updateExpense(expense.id, values)
         : await createExpense(values);
-
-      console.log("Expense save result:", result);
 
       if (result.success) {
         setShowSuccess(true);
@@ -362,22 +375,15 @@ export function ExpenseForm({ budgetId, expenseCategories, expense, children, on
                                       }}
                                       onChange={(e) => {
                                         const rawValue = e.target.value.replace(/,/g, "");
-                                        console.log("onChange - e.target.value:", e.target.value, "rawValue:", rawValue);
                                         if (rawValue === "" || /^\d*\.?\d{0,2}$/.test(rawValue)) {
                                           const numValue = parseFloat(rawValue) || 0;
-                                          console.log("onChange - numValue:", numValue);
                                           const maxAmount = 9999999999.99;
 
                                           if (numValue <= maxAmount) {
-                                            console.log("onChange - setting amountInputValue to:", rawValue);
                                             setAmountInputValue(rawValue);
                                             field.onChange(numValue);
                                             setAmountError(false);
-                                          } else {
-                                            console.log("onChange - value exceeds maxAmount");
                                           }
-                                        } else {
-                                          console.log("onChange - invalid format");
                                         }
                                       }}
                                       className={cn(
