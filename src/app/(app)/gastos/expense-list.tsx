@@ -23,6 +23,8 @@ type Props = {
   expenses: ExpenseWithCategory[];
   expenseCategories: ExpenseCategoryWithRelations[];
   budgetId: string;
+  emptyTitle?: string;
+  emptyDescription?: string;
 };
 
 type MonthGroup = {
@@ -96,7 +98,13 @@ function groupByMonth(expenses: ExpenseWithCategory[]): MonthGroup[] {
   return Array.from(map.values()).sort((a, b) => b.key.localeCompare(a.key));
 }
 
-export function ExpenseList({ expenses, expenseCategories, budgetId }: Props) {
+export function ExpenseList({
+  expenses,
+  expenseCategories,
+  budgetId,
+  emptyTitle,
+  emptyDescription,
+}: Props) {
   const [pending, startTransition] = useTransition();
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [editingExpense, setEditingExpense] = useState<ExpenseWithCategory | null>(null);
@@ -121,9 +129,11 @@ export function ExpenseList({ expenses, expenseCategories, budgetId }: Props) {
       <div className="py-16 text-center">
         <Receipt className="h-12 w-12 text-[#6B7280] mx-auto mb-4 opacity-50" />
         <p className="text-[15px] font-medium text-[#111111] mb-1">
-          Sin gastos en {currentMonth}
+          {emptyTitle ?? `Sin gastos en ${currentMonth}`}
         </p>
-        <p className="text-[13px] text-[#6B7280]">Toca + para registrar uno</p>
+        <p className="text-[13px] text-[#6B7280]">
+          {emptyDescription ?? "Toca + para registrar uno"}
+        </p>
       </div>
     );
   }

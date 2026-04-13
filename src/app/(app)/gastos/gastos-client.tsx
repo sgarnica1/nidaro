@@ -2,9 +2,10 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight, Search, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { ExpenseList } from "./expense-list";
 import { ExpenseForm } from "./expense-form";
 import { cn } from "@/lib/utils";
@@ -58,6 +59,7 @@ export function GastosClient({
   const router = useRouter();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const currentBudgetIndex = useMemo(() => {
     return budgetOptions.findIndex((b) => b.id === budgetId);
@@ -107,11 +109,22 @@ export function GastosClient({
     });
   }, [expenses, selectedMonth]);
 
-  const currentMonthTotal = useMemo(() => {
-    return filteredExpenses.reduce((sum, e) => sum + e.amount, 0);
-  }, [filteredExpenses]);
+  const normalizedSearchQuery = searchQuery.trim().toLocaleLowerCase();
 
-  const currentMonthCount = filteredExpenses.length;
+  const visibleExpenses = useMemo(() => {
+    if (!normalizedSearchQuery) {
+      return filteredExpenses;
+    }
+    return filteredExpenses.filter((expense) =>
+      expense.name.toLocaleLowerCase().includes(normalizedSearchQuery)
+    );
+  }, [filteredExpenses, normalizedSearchQuery]);
+
+  const currentMonthTotal = useMemo(() => {
+    return visibleExpenses.reduce((sum, e) => sum + e.amount, 0);
+  }, [visibleExpenses]);
+
+  const currentMonthCount = visibleExpenses.length;
 
   const selectedMonthLabel = selectedMonth
     ? availableMonths.find((m) => m.key === selectedMonth)?.label
@@ -188,8 +201,31 @@ export function GastosClient({
           <p className="text-[13px] text-[#6B7280]">
             {currentMonthCount} {currentMonthCount === 1 ? "gasto" : "gastos"}{" "}
             {selectedMonthLabel ? `en ${selectedMonthLabel}` : "en total"}
+            {normalizedSearchQuery ? " que coinciden" : ""}
           </p>
         </motion.div>
+
+        <div className="mb-6">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#6B7280]" />
+            <Input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Buscar gasto por nombre"
+              className="h-11 rounded-xl border-[#E5E7EB] bg-white pl-10 pr-11 text-[14px] shadow-none focus-visible:ring-1 focus-visible:ring-[#1C3D2E]"
+            />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-full text-[#6B7280] transition-colors hover:bg-[#F3F4F6] hover:text-[#111111]"
+                aria-label="Limpiar búsqueda"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+        </div>
 
         {availableMonths.length > 1 && (
           <div className="mb-6 -mx-5 px-5">
@@ -234,9 +270,13 @@ export function GastosClient({
       </div>
 
       <ExpenseList
-        expenses={filteredExpenses}
+        expenses={visibleExpenses}
         expenseCategories={expenseCategories}
         budgetId={budgetId}
+        emptyTitle={normalizedSearchQuery ? "No se encontraron gastos" : undefined}
+        emptyDescription={
+          normalizedSearchQuery ? "Prueba con otro nombre o limpia la búsqueda" : undefined
+        }
       />
 
       <ExpenseForm
